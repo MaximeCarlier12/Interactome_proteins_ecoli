@@ -36,14 +36,25 @@ def load_sample_code():
   print(MS.iloc[0:10]['sample code'])
   return MS
 
-def load_based_screen(): 
-  '''get based screen part of MS xlsx file'''
+def load_based_screen_controls(): 
+  '''get controls part of based screen in MS xlsx file.
+Returns a list of pandas containing : the resin unspecific control, the tag unspecific control and the untagged whole cell lysates'''
 
-  MS = pd.read_excel("MS PPI screen - sample coding, 200226.xlsx", sheet_name = 1, header = 16)
+  df = pd.read_excel("MS PPI screen - sample coding, 200226.xlsx", sheet_name = 1, header = 2, skipfooter = 44-13)
+  df = df.rename(columns = {'LB log.1':'repeat LB log','LB O/N.1' : 'repeat LB O/N', 'M9 0.2% ac O/N.1' : 'repeat M9 0.2% ac O/N', 'strain - tagged protein (all in MG1655 genetic background)':'protein'}) # rename repeat number for each condition. 
+  df = df.drop(df.columns[[9,10,11,12]], axis=1)
+  typeResin = df.loc[df['strain'] == 'MG1655 (TYPE A)']
+  typeTag = df.loc[df['strain'] == 'MG1655 (placI)mVenus-SPA-pUC19 (TYPE C2)']
+  typeAbundant = df.loc[df['strain'] == 'MG1655']
+  return [typeResin, typeTag, typeAbundant]
+
+def load_based_screen_samples(): 
+  '''get samples part of based screen in MS xlsx file'''
+
+  df = pd.read_excel("MS PPI screen - sample coding, 200226.xlsx", sheet_name = 1, header = 16)
   header("index")
-  MS = MS.rename(columns = {'LB log.1':'repeat LB log','LB O/N.1' : 'repeat LB O/N', 'M9 0.2% ac O/N.1' : 'repeat M9 0.2% ac O/N', 'strain - tagged protein (all in MG1655 genetic background)':'protein'}) # rename repeat number for each protein. 
-  print(MS.columns)
-  return MS
+  df = df.rename(columns = {'LB log.1':'repeat LB log','LB O/N.1' : 'repeat LB O/N', 'M9 0.2% ac O/N.1' : 'repeat M9 0.2% ac O/N', 'strain - tagged protein (all in MG1655 genetic background)':'protein'}) # rename repeat number for each condition. 
+  return df
 
 def get_replicates(MS, protein, condition):
   ''' From one protein and one condition, it gets all replicates dataframes.'''
@@ -65,8 +76,9 @@ def get_replicates(MS, protein, condition):
 
 #df = load_df("A1")
 #load_sample_code()
-MS = load_based_screen()
-replicates = get_replicates(MS, 'DnaA', 'M9 0.2% ac O/N')
-print(replicates)
+controls = load_based_screen_controls()
+samples = load_based_screen_samples()
+#replicates = get_replicates(MS, 'DnaA', 'M9 0.2% ac O/N')
+#print(replicates)
 
 
