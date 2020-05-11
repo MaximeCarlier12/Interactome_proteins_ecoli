@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import os
 import glob
+os.chdir("/home/carlier/Documents/Stage/Interactome_proteins_ecoli/") # where is the MS data
 
 all_controls = dt.load_based_screen_controls()
 all_samples = dt.load_based_screen_samples()
@@ -54,7 +55,7 @@ def test_bioP():
 #    a.append(b)
   handle.close()
 
-test_bioP()
+#test_bioP()
 
 def add_columns_df(df, string):
   access = []
@@ -94,8 +95,6 @@ def add_columns_df(df, string):
     if is_prot == False : 
       name.append('None')
   handle.close()
-  header('Genes for NCBIprot')
-  print(gene)
   df['Accession_number'] = access # recupere tous les numéros d'accession
   df['Protein_name'] = name # recupere tous les numéros d'accession
   df['Organism'] = organism # recupere tous les numéros d'accession
@@ -110,7 +109,15 @@ def create_csv(bfNumber):
 # F2, U6, U7 : ncbiprot
   df = dt.load_df(bfNumber)
   df = add_columns_df(df, accession_list(df))
-  os.chdir("/home/carlier/Documents/Stage/Interactome_proteins_ecoli/") # where is the MS data
+  df = df[~df.Gene_name.str.contains("None", case=False)] # Remove rows without genes.
+  df = df[df.Organism.str.contains("Escherichia coli", case=False)] # Remove rows wrong organism
+  for i in pd.unique(df['Family']): # Remove redundant rows, keep max sig seq. 
+    if len(df.loc[df['Family'] == i]) > 1 :
+      df_fam = df.loc[df['Family'] == i]
+      df_fam = df_fam.sort_values(by=['Num. of significant sequences','Num. of significant matches'] , ascending=False)
+      indexNames = df_fam.iloc[1:].index
+      df.drop(indexNames , inplace=True)
+
   path_batch = "MS data csv reportbuilder-20200408T212019Z-001/MS data csv reportbuilder/"
   if len(bfNumber) == 1:
       letter = ''
@@ -121,7 +128,21 @@ def create_csv(bfNumber):
   full_path = glob.glob(path_batch+"batch "+letter+"/*"+letter+number+".reportbuilder.csv")
   df.to_csv(path_batch+"batch "+letter+"/"+letter+number+'.csv')
 
-#create_csv('F2')
+#create_csv('A1')
 #create_csv('U6')
 #create_csv('U7')
+def create_csv_good_proteins():
+  header('proteins')
+  all_samples = dt.load_based_screen_samples()
+  for my_tuple in dt.good_proteins():
+    batch_names = dt.get_batches(all_samples,my_tuple[0], my_tuple[1])
+    for bname in batch_names:
+      print(bname)
+      create_csv(bname)
+  header('controls')
+  controls = ['S1','S2','S3', 'O9', 'R4', 'R5', 'R1', 'R2', 'R3']
+  for bname in controls:
+    print(bname)
+    create_csv(bname)
 
+#create_csv_good_proteins()

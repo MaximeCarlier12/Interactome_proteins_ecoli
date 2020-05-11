@@ -80,19 +80,19 @@ def get_control_replicates(pd_control, type_control, condition):
   batches = batches.replace(';',',') # replace ';' by ',' because there are two separator ways in the initial file. 
   batches = batches.replace(" ", "") # remove spaces
   batches = batches.split(',') # separate the replicates
-  header('batches')    
-  print(batches)
+#  header('batches')    
+#  print(batches)
   return [load_df(batches[i]) for i in range(len(batches))]
 
-def get_protein_replicates(MS, protein, condition):
-  ''' MS is the sample file. From one protein and one condition, it gets all replicates dataframes.'''
+def get_batches(pd_samples, protein, condition):
+  ''' MS is the sample file. From one protein and one condition, it gets all batch names.'''
   if not condition in CONDITION : 
     print("Error condition")
     return None
   if not protein in PROTEIN : 
     print("Error protein")
     return None
-  prot_row = MS[MS.protein== protein] # get only one row.
+  prot_row = pd_samples[pd_samples.protein== protein] # get only one row.
   repeat_condition = 'repeat '+condition
   if prot_row[repeat_condition].iloc[0] != 3:
     print("Be carreful, there are not 3 replicates")
@@ -100,8 +100,12 @@ def get_protein_replicates(MS, protein, condition):
   batches = batches.replace(';',',') # replace ';' by ',' because there are two separator ways in the initial file. 
   batches = batches.replace(" ", "") # remove spaces
   batches = batches.split(',') # separate the replicates
-  header('batches')    
-  print(batches)
+#  header('batches')    
+#  print(batches)
+  return batches
+
+def get_protein_replicates(pd_samples, protein, condition):
+  batches = get_batches(pd_samples, protein, condition)
   return [load_df(batches[i]) for i in range(len(batches))]
 
 def get_replicates(pd, obj, condition, control=False):
@@ -115,9 +119,9 @@ Obj : control or protein.'''
 
 def intersect_index(replicates):
   ''' From a list of replicates, gives a list of accession number proteins present in all replicates.'''
-  intersect = replicates[0]['Gene_name']
+  intersect = replicates[0].index
   for i in replicates : 
-    intersect = intersect.intersection(i['Gene_name'])
+    intersect = intersect.intersection(i.index)
   return intersect
 
 #df = load_df("A1")
@@ -135,20 +139,36 @@ def count_databases():
 
   header("test database")
   nb_inter = []
+  bd = []
+  bd2 = []
   for p in PROTEIN :
-    check = False
+    check = False;check_c = False
     for c in CONDITION : 
+      check = False
+      check_c = False
       rep = get_protein_replicates(all_samples, p, c)
       inter = len(intersect_index(rep))
       if inter != 0:
         check = True
       nb_inter.append(inter)
-    if check == False :
-      print("Error for", p) # for each protein, in there at least one control : no
+      if check == False :
+        print("Error for", p, "in condition", c) # for each protein, in there at least one control : no
+      if check == True:
+        bd.append(rep[0]['Database'][0])
+        ctr = 'MG1655 (placI)mVenus-SPA-pUC19 (TYPE C2)'
+        rep = get_control_replicates(all_controls, ctr, c)
+        bd2.append(rep[0]['Database'][0])
+        inter = len(intersect_index(rep))
+        if inter != 0:
+          check_c = True
+        else : print("error for control in condition", c)
+
   print(nb_inter, len(nb_inter))
   nb_inter1 = [nb_inter[i] for i in range(len(nb_inter)) if nb_inter[i] == 0]
   nb_inter2 = []
-
+  print(bd)
+  print(bd2)
+  print([bd[i] == bd2[i] for i in range(len(bd))])
   for c in CONDITION : 
     check = False
     for ctr in CONTROL :
@@ -163,3 +183,25 @@ def count_databases():
   print("number of protein with different databases : ", len(nb_inter1), "out of", len(nb_inter))
   print("number of controls with different databases :", len(nb_inter3), "out of", len(nb_inter2))
 
+def good_proteins():
+  '''List of tuple containing the protein to be used and its condition'''
+  bdp = ''; bdc = ''
+  good_proteins = []
+  for p in PROTEIN :
+#    check = False; check_c = False
+    for c in CONDITION : 
+      check = False
+      check_c = False
+      rep = get_protein_replicates(all_samples, p, c)
+      inter = len(intersect_index(rep))
+      if inter != 0:
+        check = True
+        bdp = rep[0]['Database'][0]
+        ctr = 'MG1655 (placI)mVenus-SPA-pUC19 (TYPE C2)'
+        rep = get_control_replicates(all_controls, ctr, c)
+        bdc = rep[0]['Database'][0]
+        if bdp == bdc:
+          good_proteins.append((p,c))
+  return good_proteins
+#print(good_proteins())
+#count_databases()
