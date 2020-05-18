@@ -27,7 +27,7 @@ def load_df(bfNumber):
     full_path = glob.glob(path_batch+"batch 1/*"+"_"+number+".reportbuilder.csv")
   else :
     letter = bfNumber[0]
-    number = bfNumber[1]
+    number = bfNumber[1:]
     full_path = glob.glob(path_batch+"batch "+letter+"/*"+letter+"_"+number+".reportbuilder.csv") # A_5
     if full_path == []:
       full_path = glob.glob(path_batch+"batch "+letter+"/*"+letter+number+".reportbuilder.csv")

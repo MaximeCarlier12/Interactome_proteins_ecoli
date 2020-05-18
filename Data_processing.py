@@ -1,4 +1,4 @@
-import data as dt
+import Load_PPI_screen as dt
 from Bio import Entrez
 import csv
 import numpy as np
@@ -103,7 +103,7 @@ def add_columns_df(df, string):
   df = df.set_index('Accession_number')
   return df
 
-def create_csv(bfNumber):
+def create_csv_genes(bfNumber):
 # W1, W2 sprot et G2 ncbiprot
 # A1, E1 ncbinr I4 ncbiprot
 # F2, U6, U7 : ncbiprot
@@ -124,25 +124,88 @@ def create_csv(bfNumber):
       number = bfNumber
   else :
     letter = bfNumber[0]
-    number = bfNumber[1]
+    number = bfNumber[1:]
   full_path = glob.glob(path_batch+"batch "+letter+"/*"+letter+number+".reportbuilder.csv")
-  df.to_csv(path_batch+"batch "+letter+"/"+letter+number+'.csv')
+  df.to_csv(path_batch+"batch "+letter+"/genes_"+letter+number+'.csv')
 
-#create_csv('A1')
-#create_csv('U6')
-#create_csv('U7')
-def create_csv_good_proteins():
+#create_csv_genes('T10')
+
+def create_csv_genes_good_proteins():
   header('proteins')
   all_samples = dt.load_based_screen_samples()
   for my_tuple in dt.good_proteins():
     batch_names = dt.get_batches(all_samples,my_tuple[0], my_tuple[1])
     for bname in batch_names:
       print(bname)
-      create_csv(bname)
+      create_csv_genes(bname)
   header('controls')
-  controls = ['S1','S2','S3', 'O9', 'R4', 'R5', 'R1', 'R2', 'R3']
-  for bname in controls:
+  controls_typeC = ['S1','S2','S3', 'O9', 'R4', 'R5', 'R1', 'R2', 'R3']
+  for bname in controls_typeC:
     print(bname)
-    create_csv(bname)
+    create_csv_genes(bname)
+  controls_typeA = ['L1', 'T7', 'T8', 'T9', 'C13', 'P5', 'U10', 'A10', 'T5', 'T6']
+  for bname in controls_typeA:
+    create_csv_genes(bname)
 
-#create_csv_good_proteins()
+#create_csv_genes_good_proteins()
+
+def load_df_genes(bfNumber):
+  '''Load dataframe from new files with all gene names.'''
+  os.chdir("/home/carlier/Documents/Stage/Interactome_proteins_ecoli/") # where is the MS data
+  path_batch = "MS data csv reportbuilder-20200408T212019Z-001/MS data csv reportbuilder/"
+  letter = bfNumber[0]
+  number = bfNumber[1:]
+  full_path = path_batch+"batch "+letter+"/genes_"+letter+number+'.csv'
+  df = pd.read_csv(full_path, sep=',', header=0)
+  df = df.set_index("Accession_number")
+  return df
+
+def remove_duplicate_genes(rep):
+  '''One replicate '''
+  unique_genes = rep.Gene_name.unique()
+  a = rep[rep.Gene_name.isin(unique_genes)]
+  if len(a.index) != len(unique_genes):
+    duplicate = a.groupby('Gene_name').count()
+    indexNames = duplicate[duplicate.Accession == 1].index
+    duplicate = duplicate.drop(indexNames)
+    for i in duplicate.index:
+      df_duplicate = a.loc[a['Gene_name'] == i]
+      indexNames = df_duplicate.iloc[1:].index
+      a = a.drop(indexNames)
+  return a
+
+#rep = load_df_genes('U3')
+#print(len(rep))
+#res = remove_duplicate_genes(rep)
+#print(len(res))
+
+def create_csv_unique_gene(bfNumber):
+  df = load_df_genes(bfNumber)
+  df = remove_duplicate_genes(df)
+  if len(bfNumber) == 1:
+      letter = ''
+      number = bfNumber
+  else :
+    letter = bfNumber[0]
+    number = bfNumber[1:]
+  path_batch = "MS data csv reportbuilder-20200408T212019Z-001/MS data csv reportbuilder/"
+  df.to_csv(path_batch+"batch "+letter+"/unique_gene_"+letter+number+'.csv')
+
+def create_all_csv_unique_gene():
+  used_prot_tuples = dt.good_proteins()
+  for prot1 in used_prot_tuples:
+    prot_batches = dt.get_batches(all_samples, prot1[0], prot1[1])
+    for bname in prot_batches:
+      print(bname)
+      create_csv_unique_gene(bname)
+  controls_typeC = ['S1','S2','S3', 'O9', 'R4', 'R5', 'R1', 'R2', 'R3']
+  for bname in controls_typeC:
+    create_csv_unique_gene(bname)
+  controls_typeA = ['L1', 'T7', 'T8', 'T9', 'C13', 'P5', 'U10', 'A10', 'T5', 'T6']
+  for bname in controls_typeA:
+    create_csv_unique_gene(bname)
+  
+
+#create_all_csv_unique_gene()
+# be careful, C13 and A10 are in NCBInr database (controls_typeA in LB O/N and M9 0.2% ac O/N)
+
