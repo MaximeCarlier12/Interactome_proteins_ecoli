@@ -12,6 +12,23 @@ from matplotlib.ticker import FormatStrFormatter
 from scipy import stats
 import statsmodels.stats.multitest
 
+params = {
+    'pdf.fonttype': 42,
+    'ps.fonttype': 42,
+   'axes.labelsize': 11,
+   'font.size': 11,
+   'legend.fontsize': 9,
+   'xtick.labelsize': 10,
+   'ytick.labelsize': 10,
+   'text.usetex': False,
+   'axes.linewidth':1.5, #0.8
+   'axes.titlesize':11,
+   'axes.spines.top':True,
+   'axes.spines.right':True,
+   'font.family': "Arial"
+   }
+plt.rcParams.update(params)
+
 def load_df_unique_gene(bfNumber):
   '''Load dataframe from new files with all gene names.'''
   os.chdir("/home/carlier/Documents/Stage/Interactome_proteins_ecoli/") # where is the MS data
@@ -249,22 +266,27 @@ def plot_emPAI(prot1, control = 'AC'):
 
 def plot_log2_emPAI(prot1, control = 'AC'):
   '''Plot log2(emPAI) value for each gene for controls and test.'''
+
+  fig,ax = plt.subplots()
+  width = 6.5 ; height = 4.5 # taille finale de ta figure
+  fig.set_size_inches(width, height)
+
   df = load_df_table(prot1, True)
   df['max_empai'] = df[['Rep1', 'Rep2', 'Rep3']].max(axis=1)
   minval = df[['Rep1', 'Rep2', 'Rep3']].min().min() # min value of the table
   maxval = df[['Rep1', 'Rep2', 'Rep3']].max().max() # max value of the table
   df = df.sort_values(by = 'max_empai', ascending = False)
   for i,rep in enumerate(['Rep1', 'Rep2', 'Rep3']):
-    plt.scatter(df.index, np.log2(df[rep]), label="Protein test" if i == 0 else "", color='royalblue', alpha=0.3, marker = 'o', s=40)
+    ax.scatter(df.index, np.log2(df[rep]), label="Protein test" if i == 0 else "", color='royalblue', alpha=0.3, marker = 'o', s=40)
   plt.title(prot1[0]+' in '+prot1[1])
   if 'A' in control:
     for i,rep in enumerate(['CtrA1', 'CtrA2', 'CtrA3']):
-      plt.scatter(df.index, np.log2(df[rep]), label="CtrA (without SPA tag)" if i == 0 else "", color='red', alpha=0.6, marker = 0, s=40)
+      ax.scatter(df.index, np.log2(df[rep]), label="CtrA (without SPA tag)" if i == 0 else "", color='red', alpha=0.6, marker = 0, s=40)
     if 'CtrA4' in df :
-      plt.scatter(df.index, np.log2(df.CtrA4), color='red', alpha=0.6, marker = 0, s=40)
+      ax.scatter(df.index, np.log2(df.CtrA4), color='red', alpha=0.6, marker = 0, s=40)
   if 'C' in control:
     for i,rep in enumerate(['CtrC1', 'CtrC2', 'CtrC3']):
-      plt.scatter(df.index, np.log2(df[rep]), label="CtrC (with SPA tag)" if i == 0 else "", color='yellowgreen', alpha=0.6, marker = 1, s=40)
+      ax.scatter(df.index, np.log2(df[rep]), label="CtrC (with SPA tag)" if i == 0 else "", color='yellowgreen', alpha=0.6, marker = 1, s=40)
 #  plt.text(df.index[0], np.log2(minval)-0.4, 'a', horizontalalignment='left',verticalalignment='center', color ='chartreuse')
 #  plt.text(df.index[0], np.log2(minval)-0.4, 'b', horizontalalignment='right',verticalalignment='center', color = 'red')
   dftrue = df[df.C_is == True]
@@ -278,8 +300,8 @@ def plot_log2_emPAI(prot1, control = 'AC'):
   sigC = [x+0.2 for x in sigC]
   sigA = [x-0.2 for x in sigA]
 
-  plt.scatter(sigA, [np.log2(minval)-0.4]*len(sigA),c='red', marker=(5, 2), label = 'Significative test with CtrA') # add stars for significative controls.
-  plt.scatter(sigC, [np.log2(minval)-0.4]*len(dftrue.index),c='yellowgreen', marker=(5, 2), label = 'Significative test with CtrC') # add stars for significative controls.
+  ax.scatter(sigA, [np.log2(minval)-0.4]*len(sigA),c='red', marker=(5, 2), label = 'Significative test with CtrA') # add stars for significative controls.
+  ax.scatter(sigC, [np.log2(minval)-0.4]*len(dftrue.index),c='yellowgreen', marker=(5, 2), label = 'Significative test with CtrC') # add stars for significative controls.
 
   plt.xticks(rotation=90)
   plt.ylim(np.log2(minval)-0.6, np.log2(maxval)+0.5)
@@ -288,11 +310,14 @@ def plot_log2_emPAI(prot1, control = 'AC'):
   plt.grid(axis = 'x') # vertical lines
   plt.legend()
   path_batch = "../Images/emPAI/"
-  plt.savefig(path_batch+prot1[0]+'.png', bbox_inches='tight')
   manager = plt.get_current_fig_manager() # get full screen
   manager.window.showMaximized() # get full screen
-  plt.tight_layout() # get full screen
+  fig.tight_layout()
+  fig.subplots_adjust(left=.05, bottom=.2, right=.96, top=.93) # marges
+  plt.savefig(path_batch+prot1[0]+'.svg') # image vectorisée
+  plt.savefig(path_batch+prot1[0]+'.png', transparent=False, dpi = 300) # image pixelisée, dpi = résolution
   plt.show()
+  plt.close('all')
 
 #plot_emPAI(used_prot_tuples[0], 'AC')
 
@@ -375,11 +400,6 @@ def nbr_prot_file():
   print()
   print(nb_prot)
 
-for prot in used_prot_tuples:
-  if prot[0] == "DnaA":
-    if 'O/N' in prot[1]:
-      print(dt.get_batches(pd_samples, prot[0], prot[1]))
-
 def set_pval(used_prot_tuples):
   '''First t-tests'''
   for prot1 in used_prot_tuples:
@@ -424,5 +444,9 @@ def set_pval(used_prot_tuples):
 #for prot1 in used_prot_tuples:
 #  df = load_df_table(prot1, True)
 #  print(prot1[0], prot1[1][:6]+'\t', 'TestC', df[df.C_is ==True].shape[0],'\t', 'TestA', df[df.A_is ==True].shape[0],'\t', 'TestC & TestA', df[(df.A_is ==True) & (df.C_is == True)].shape[0])
+for prot in used_prot_tuples:
+  if prot[0] == "DnaA":
+    if 'O/N' in prot[1]:
+      print(dt.get_batches(pd_samples, prot[0], prot[1]))
 
 plot_log2_emPAI(used_prot_tuples[0], 'AC')
