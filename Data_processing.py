@@ -58,6 +58,7 @@ def test_bioP():
 #test_bioP()
 
 def add_columns_df(df, string):
+  '''Find the appropriate gene_name for each protein.'''
   access = []
   definition = []
   name = []
@@ -104,6 +105,7 @@ def add_columns_df(df, string):
   return df
 
 def create_csv_genes(bfNumber):
+  '''Create new csv files with information such as gene_name...'''
 # W1, W2 sprot et G2 ncbiprot
 # A1, E1 ncbinr I4 ncbiprot
 # F2, U6, U7 : ncbiprot
@@ -111,6 +113,7 @@ def create_csv_genes(bfNumber):
   df = add_columns_df(df, accession_list(df))
   df = df[~df.Gene_name.str.contains("None", case=False)] # Remove rows without genes.
   df = df[df.Organism.str.contains("Escherichia coli", case=False)] # Remove rows wrong organism
+#  df = df[df['Num. of significant sequences']>1]
   for i in pd.unique(df['Family']): # Remove redundant rows, keep max sig seq. 
     if len(df.loc[df['Family'] == i]) > 1 :
       df_fam = df.loc[df['Family'] == i]
@@ -131,6 +134,7 @@ def create_csv_genes(bfNumber):
 #create_csv_genes('T10')
 
 def create_csv_genes_good_proteins():
+  '''Create new files for each protein file that will be used, that contain new columns such as gene_name, organism, ID.'''
   header('proteins')
   all_samples = dt.load_based_screen_samples()
   for my_tuple in dt.good_proteins():
@@ -145,6 +149,7 @@ def create_csv_genes_good_proteins():
     create_csv_genes(bname)
   controls_typeA = ['L1', 'T7', 'T8', 'T9', 'C13', 'P5', 'U10', 'A10', 'T5', 'T6']
   for bname in controls_typeA:
+    print(bname)
     create_csv_genes(bname)
 
 #create_csv_genes_good_proteins()
@@ -192,6 +197,7 @@ def create_csv_unique_gene(bfNumber):
   df.to_csv(path_batch+"batch "+letter+"/unique_gene_"+letter+number+'.csv')
 
 def create_all_csv_unique_gene():
+  '''Create new csv that contain each gene only once.'''
   used_prot_tuples = dt.good_proteins()
   for prot1 in used_prot_tuples:
     prot_batches = dt.get_batches(all_samples, prot1[0], prot1[1])
