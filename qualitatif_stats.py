@@ -13,11 +13,11 @@ from matplotlib.colors import LinearSegmentedColormap
 
 pd_samples = dt.load_based_screen_samples()
 pd_controls = dt.load_based_screen_controls()
-used_prot_tuples = dt.good_proteins() 
+used_prot_tuples = dp.good_proteins() 
 controls_typeC = {'LB log':['S1','S2','S3'], 'LB O/N':['O9', 'R4', 'R5'], 'M9 0.2% ac O/N':['R1', 'R2', 'R3']}
 controls_typeA = {'LB log':['L1', 'T7', 'T8', 'T9'], 'LB O/N':['C13', 'P5', 'U10'], 'M9 0.2% ac O/N':['A10', 'T5', 'T6']}
 
-def log_calculation(prot1, data):
+def log_calculation(prot1):
   '''Calculation of emPAI logs and for a specific protein/condition.'''
   path_batch = "MS data csv reportbuilder-20200408T212019Z-001/Used_proteins_csv/"
   df = hd.load_df_table(prot1, True)
@@ -86,9 +86,6 @@ def wrong_bartlett_test(all_prots, data, threshold):
   fig.suptitle('Variance between prey proteins for '+data_type+ ' replicates')
   plt.show()
   return b_test
-
-#bartlett_test(used_prot_tuples,0, 0.25)
-
 
 def get_samples_bartlett_test(prot, data, threshold):
   '''Statistical test that checks if variance is similar or not between predatory proteins of a similar bait protein. H0 is equal variance.
@@ -218,30 +215,13 @@ def compare_tests():
 common_var = hd.load_df_equal_test()
 #print(common_var)
 
-df = hd.load_df_table(used_prot_tuples[0], True)[['Rep1_log2', 'Rep2_log2', 'Rep3_log2']]
+df = np.log2(hd.load_df_table(used_prot_tuples[0], True)[['Rep1', 'Rep2', 'Rep3']])
 #print(df)
 
-def mean_confidence_interval(data, confidence, variance = 0):
-    n = data.shape[1]
-    print(n)
-    m = df.mean(axis = 1) # mean
-    if variance == 0:
-      se = data.sem(axis = 1) # standard error(erreur type = s/racine(n))      
-    else:
-      se = np.sqrt(variance/n)
-    h = se * stats.t.ppf((1 + confidence) / 2., n-1) # t value such that (1-alpha = 0.95)
-    print(stats.t.ppf((0.8), n-1))
-#    return stats.t.interval(0.95, len(a)-1, loc=np.mean(a), scale=stats.sem(a))
-    d = {'mean': m,'conf_inf': m-h, 'conf_sup': m+h}
-    return pd.DataFrame(d)
-
-#res = mean_confidence_interval(df, 0.95)
-#print(res)
-#print(res.shape)
-
 def get_global_variance(prot, threshold):
-  '''Returns the global variance for test and ctrC and ctrA.'''
+  '''Returns the global variance for test and ctrC and ctrA for each protein/grotwh condition.'''
   all_vars = []
+  flat_list = []
   for data in [0,1,2]:
     if data == 0: #test
       data_type = 'test'
@@ -272,7 +252,38 @@ def get_global_variance(prot, threshold):
     print('Number of different proteins :', df.shape[0])
     df_norm = df.sub(df.mean(axis=1), axis=0)
     all_vars += list(df_norm.var(axis=1))
-  return np.mean(all_vars)
+    list_pd = df_norm.values.tolist()
+    for sublist in  list_pd:
+      for item in sublist:
+        flat_list.append(item)
+  print('biaised_estimated var', np.var(flat_list))
+  print('unbiaised_estimated var', np.var(flat_list, ddof = 1))
+  print('over_estimated var', np.mean(all_vars))
+  shapiro_test = stats.shapiro(flat_list)
+  print('shapiro test :', shapiro_test)
+  return np.var(flat_list, ddof = 1)
+
+def mean_confidence_interval(data, confidence, variance = 0):
+    n = data.shape[1]
+    m = data.mean(axis = 1) # mean
+    if variance == 0:
+      se = data.sem(axis = 1) # standard error(erreur type = s/racine(n))      
+    else:
+      se = np.sqrt(variance/n)
+    h = se * stats.norm.ppf((1 + confidence) / 2., 0, 1) # z value such that (1-alpha = confidence)
+#    print(stats.t.ppf((1 + confidence) / 2., n-1))
+#    print(stats.norm.ppf((1 + confidence) / 2., 0, 1))
+#    print(stats.norm.ppf(confidence, 0, 1))
+    data['mean'] = m
+    data['conf_inf'] = m-h
+    data['conf_sup'] = m+h
+#    d = {'mean': m,'conf_inf': m-h, 'conf_sup': m+h}
+    return data[['mean', 'conf_inf', 'conf_sup']]
+
+#res = mean_confidence_interval(df, 0.95, get_global_variance(used_prot_tuples[0], 0.25))
+#print(res)
+#print(res.shape)
+
 
 def test_normal_equal_var(prot1, threshold):
   '''Test de z'''
@@ -311,8 +322,7 @@ def test_normal_equal_var(prot1, threshold):
   path_batch = "MS data csv reportbuilder-20200408T212019Z-001/Used_proteins_csv/"
   df.to_csv(path_batch+ prot1[0]+"_"+prot1[1].replace('/', '_')+'_multipleRep.csv')
 
-
-#for i in used_prot_tuples[0:1]:
+#for i in used_prot_tuples:
 #  dt.header(i[0]+ 'in '+i[1])
 #  test_normal_equal_var(i, 0.25)
 

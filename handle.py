@@ -3,7 +3,6 @@ import Data_processing as dp
 import csv
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib_venn import venn3, venn2
 import pandas as pd
 import os
 #from matplotlib.ticker import FormatStrFormatter
@@ -40,7 +39,7 @@ def load_df_unique_gene(bfNumber):
 
 pd_samples = dt.load_based_screen_samples()
 pd_controls = dt.load_based_screen_controls()
-used_prot_tuples = dt.good_proteins() 
+used_prot_tuples = dp.good_proteins() 
 #contaminant_genes = dt.load_contaminant_list()
 controls_typeC = {'LB log':['S1','S2','S3'], 'LB O/N':['O9', 'R4', 'R5'], 'M9 0.2% ac O/N':['R1', 'R2', 'R3']}
 controls_typeA = {'LB log':['L1', 'T7', 'T8', 'T9'], 'LB O/N':['C13', 'P5', 'U10'], 'M9 0.2% ac O/N':['A10', 'T5', 'T6']}
@@ -89,63 +88,7 @@ def file_result(filename):
     myfile.write('\tCommon ctr proteins :\n')  
     for i in pNamesC:
       myfile.write(i+'\n')   
-    myfile.write('\n')   
-
-def venn_diagram(data):
-  '''Plot a venn2 or venn3 diagram.'''
-  set_array = []
-  for rep in data:
-    set_array.append(set(rep['Gene_name']))
-  if len(data) == 3:
-    set_names = ['Rep1', 'Rep2', 'Rep3']
-    venn3(set_array, set_names)   # venn3 works for three sets
-  elif len(data) == 2:
-    set_names = ['Rep', 'Ctr']
-    venn2(set_array, set_names)   # venn3 works for three sets
-  elif len(data) == 4:
-    set_names = ['Rep1', 'Rep2', 'Rep3']
-    venn3(set_array[:3], set_names)   # venn3 works for three sets
-  else : print('error, please change data length')
-
-def venn_rep(used_prot_tuples):
-  '''Venn diagram of replicate of protein test for all used proteins.'''
-  plt.suptitle('Venn diagrams in replicates of a protein test')
-  for (i,prot1) in enumerate(used_prot_tuples):
-    prot_batches = dt.get_batches(pd_samples, prot1[0], prot1[1])
-    rep = [load_df_unique_gene(i) for i in prot_batches]
-    plt.subplot(3,3, i+1)
-    plt.title(prot1[0]+' in '+prot1[1])
-    venn_diagram(rep)
-  plt.show()
-
-def venn_ctr(used_prot_tuples, controls_dico, control_type):
-  '''Venn diagram of replicates of a given control for all used proteins.'''
-  plt.suptitle('Venn diagrams in controls type'+control_type)
-  for i, cond in enumerate(controls_dico.keys()):
-    ctr = [load_df_unique_gene(bname) for bname in controls_dico[cond]]
-    plt.subplot(1,3, i+1)
-    plt.title('Condition '+cond)
-    venn_diagram(ctr)
-  plt.show()
-
-def venn_inter(used_prot_tuples, controls_dico):
-  '''Venn diagram between intersect control and test.'''
-  plt.suptitle('Venn diagrams of intersection of controls and replicates')
-  for (i,prot1) in enumerate(used_prot_tuples):
-    prot_batches = dt.get_batches(pd_samples, prot1[0], prot1[1])
-    rep = [load_df_unique_gene(i) for i in prot_batches]
-    interR = df_intersect(rep)
-    ctr = [load_df_unique_gene(i) for i in controls_dico[prot1[1]]]
-    interC = df_intersect(ctr)
-    plt.subplot(3,3, i+1)
-    plt.title(prot1[0]+' in '+prot1[1])
-    venn_diagram([interR, interC])
-  plt.show()
-
-#venn_rep(used_prot_tuples)
-#venn_ctr(used_prot_tuples, controls_typeA, 'A')
-#venn_ctr(used_prot_tuples, controls_typeC, 'C')
-#venn_inter(used_prot_tuples, controls_typeC)
+    myfile.write('\n')
 
 def create_table(used_prot_tuples):
   '''Create a file containing emPAI values for each gene present at list once for test and controls replicates. Absence equals to 0.'''
@@ -303,20 +246,12 @@ def load_df_equal_test():
   df = df.set_index(['Bait protein', 'Condition'])
   return df
 
-#create_table(used_prot_tuples)
-#threshold = create_condensed_table(used_prot_tuples, 0.25)
-#set_pval(used_prot_tuples)
-#for prot1 in used_prot_tuples:
-#  df = load_df_table(prot1, True)
-#  print(prot1[0], prot1[1][:6]+'\t', 'TestC', df[df.C_is ==True].shape[0],'\t', 'TestA', df[df.A_is ==True].shape[0],'\t', 'TestC & TestA', df[(df.A_is ==True) & (df.C_is == True)].shape[0])
-
-#for prot in used_prot_tuples:
-#  if prot[0] == "HolD":
-##    if prot[1] == "LB log":
-#    print(dt.get_batches(pd_samples, prot[0], prot[1]))
-
-#plot_log2_emPAI(used_prot_tuples[1], 0.25,contaminant_genes, 'AC')
-
-#for i in used_prot_tuples[0:1]:
-#  plot_log2_emPAI(i, 0.25,contaminant_genes, 'AC')
-#plt.close('all')
+def load_df_table_maxQ(prot1, LFQ):
+  '''Load dataframe from new files with all gene names for raw or LFQ.'''
+  path_batch = "maxQ/SEGREGATED-20200619T092017Z-001/Protein_table/"
+  if LFQ == True:
+    full_path = path_batch+ prot1[0]+"_"+prot1[1].replace('/', '_')+'_LFQ.csv'
+  else:
+    full_path = path_batch+ prot1[0]+"_"+prot1[1].replace('/', '_')+'_Int.csv'
+  df = pd.read_csv(full_path, sep=',', header=0, index_col = 0)
+  return df
