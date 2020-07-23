@@ -1,26 +1,16 @@
+from globvar import *
 import Load_PPI_screen as dt
 import Data_processing as dp
-import csv
-import numpy as np
-import matplotlib.pyplot as plt
-import pandas as pd
 import handle as hd
-import os
-import glob
-from scipy import stats
 import statsmodels.stats.multitest
 from matplotlib.colors import LinearSegmentedColormap
 
-pd_samples = dt.load_based_screen_samples()
-pd_controls = dt.load_based_screen_controls()
 used_prot_tuples = dp.good_proteins() 
-controls_typeC = {'LB log':['S1','S2','S3'], 'LB O/N':['O9', 'R4', 'R5'], 'M9 0.2% ac O/N':['R1', 'R2', 'R3']}
-controls_typeA = {'LB log':['L1', 'T7', 'T8', 'T9'], 'LB O/N':['C13', 'P5', 'U10'], 'M9 0.2% ac O/N':['A10', 'T5', 'T6']}
 
-def log_calculation(prot1):
+def log_calculation(prot):
   '''Calculation of emPAI logs and for a specific protein/condition.'''
   path_batch = "MS data csv reportbuilder-20200408T212019Z-001/Used_proteins_csv/"
-  df = hd.load_df_table(prot1, True)
+  df = hd.load_df_table(prot, True)
   if 'CtrC4' in df:
     df = df[['Rep1', 'Rep2', 'Rep3', 'CtrC1', 'CtrC2', 'CtrC3', 'CtrA1','CtrA2', 'CtrA3', 'CtrA4']]
   else:
@@ -28,7 +18,7 @@ def log_calculation(prot1):
   for i in df.columns:
     newname = i+'_log2'
     df[newname] = np.log2(df[i])
-  df.to_csv(path_batch+ prot1[0]+"_"+prot1[1].replace('/', '_')+'_multipleRep.csv')
+  df.to_csv(path_batch+ prot[0]+"_"+prot[1].replace('/', '_')+'_multipleRep.csv')
 
 def wrong_bartlett_test(all_prots, data, threshold):
   '''Statistical test that checks if variance is similar or not between predatory proteins of a similar bait protein. H0 is equal variance.
@@ -253,7 +243,7 @@ def get_global_variance(prot, threshold):
     df_norm = df.sub(df.mean(axis=1), axis=0)
     all_vars += list(df_norm.var(axis=1))
     list_pd = df_norm.values.tolist()
-    for sublist in  list_pd:
+    for sublist in list_pd:
       for item in sublist:
         flat_list.append(item)
   print('biaised_estimated var', np.var(flat_list))
@@ -285,10 +275,10 @@ def mean_confidence_interval(data, confidence, variance = 0):
 #print(res.shape)
 
 
-def test_normal_equal_var(prot1, threshold):
+def test_normal_equal_var(prot, threshold):
   '''Test de z'''
-  df = hd.load_df_table(prot1, True)
-  glob_var = get_global_variance(prot1, threshold)
+  df = hd.load_df_table(prot, True)
+  glob_var = get_global_variance(prot, threshold)
   print('global_var :', glob_var)
   df['glob_var'] = glob_var
 #  print(df)
@@ -320,16 +310,16 @@ def test_normal_equal_var(prot1, threshold):
   df['C_is'] = pval_C_corr[0]
 #  print(df['pvalC'])
   path_batch = "MS data csv reportbuilder-20200408T212019Z-001/Used_proteins_csv/"
-  df.to_csv(path_batch+ prot1[0]+"_"+prot1[1].replace('/', '_')+'_multipleRep.csv')
+  df.to_csv(path_batch+ prot[0]+"_"+prot[1].replace('/', '_')+'_multipleRep.csv')
 
 #for i in used_prot_tuples:
 #  dt.header(i[0]+ 'in '+i[1])
 #  test_normal_equal_var(i, 0.25)
 
 
-def corrected_ttest(prot1, threshold):
+def corrected_ttest(prot, threshold):
   '''Welch test = (mA-mB)/sqrt(sA^2/nA+nB^2/nB) against both controls, one at a time. Variance is estimated for the whole file, it is a global variance.'''
-  df = hd.load_df_table(prot1, True)
+  df = hd.load_df_table(prot, True)
   is_fourth = 0
   if 'CtrA4' in df:
     is_fourth = 1
@@ -387,7 +377,7 @@ def corrected_ttest(prot1, threshold):
 #  df['C_is'] = df.apply (lambda row: pval_is(row, 'pvalC'), axis=1)
 #  df['A_is'] = df.apply (lambda row: pval_is(row, 'pvalA'), axis=1)
   path_batch = "MS data csv reportbuilder-20200408T212019Z-001/Used_proteins_csv/"
-  df.to_csv(path_batch+ prot1[0]+"_"+prot1[1].replace('/', '_')+'_multipleRep.csv')
+  df.to_csv(path_batch+ prot[0]+"_"+prot[1].replace('/', '_')+'_multipleRep.csv')
 
 #for i in used_prot_tuples:
 #  print(i[0], i[1])
@@ -395,9 +385,9 @@ def corrected_ttest(prot1, threshold):
 
 def set_pval(used_prot_tuples):
   '''Basic t-tests with independant samples, not equal var and estimation of variance at each test. '''
-  for prot1 in used_prot_tuples:
-    print(prot1[0], prot1[1])
-    df = hd.load_df_table(prot1, True)
+  for prot in used_prot_tuples:
+    print(prot[0], prot[1])
+    df = hd.load_df_table(prot, True)
     if 'Rep1_log2' not in df.columns:
       for i in df.columns:
         newname = i+'_log2'
@@ -436,5 +426,5 @@ def set_pval(used_prot_tuples):
     df['C_is'] = df.apply (lambda row: pval_is(row, 'pval_C'), axis=1)
     df['A_is'] = df.apply (lambda row: pval_is(row, 'pval_A'), axis=1)
     path_batch = "MS data csv reportbuilder-20200408T212019Z-001/Used_proteins_csv/"
-    df.to_csv(path_batch+ prot1[0]+"_"+prot1[1].replace('/', '_')+'_multipleRep.csv')
+    df.to_csv(path_batch+ prot[0]+"_"+prot[1].replace('/', '_')+'_multipleRep.csv')
 

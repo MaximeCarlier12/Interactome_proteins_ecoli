@@ -1,17 +1,9 @@
+from globvar import *
 import Load_PPI_screen as dt
 from Bio import Entrez
-import csv
-import numpy as np
-import pandas as pd
-import os
 import glob
-os.chdir("/home/carlier/Documents/Stage/Interactome_proteins_ecoli/") # where is the MS data
 
-CONDITION = ['LB log', 'LB O/N' ,'M9 0.2% ac O/N']
-CONTROL = ['MG1655 (TYPE A)', 'MG1655 (placI)mVenus-SPA-pUC19 (TYPE C2)', 'MG1655']
-PROTEIN = ['DnaA', 'DiaA', 'Hda', 'SeqA', 'HolD', 'DnaB', 'DnaG', 'NrdB']
-all_samples = dt.load_based_screen_samples()
-all_controls = dt.load_based_screen_controls()
+os.chdir("/home/carlier/Documents/Stage/Interactome_proteins_ecoli/") # where is the MS data
 
 def intersect_index(replicates):
   ''' From a list of pd file replicates, gives a list of indexes present in all replicates.'''
@@ -20,7 +12,7 @@ def intersect_index(replicates):
     intersect = intersect.intersection(i.index)
   return intersect
 
-def get_control_replicates(pd_control, type_control, condition):
+def get_control_batches(pd_control, type_control, condition):
   ''' From the pd.control file, get pd files of the different replicates available for a certain type of control and a certain type of condition.'''
   if not condition in CONDITION : 
     print("Error condition")
@@ -34,8 +26,13 @@ def get_control_replicates(pd_control, type_control, condition):
   batches = batches.replace(';',',') # replace ';' by ',' because there are two separator ways in the initial file. 
   batches = batches.replace(" ", "") # remove spaces
   batches = batches.split(',') # separate the replicates
-#  dt.header('batches')    
-#  print(batches)
+  # dt.header('batches')    
+  # print(batches)
+  return batches
+
+def get_control_replicates(pd_control, type_control, condition):
+  ''' From the pd.control file, get pd files of the different replicates available for a certain type of control and a certain type of condition.'''
+  batches = get_control_batches(pd_control, type_control, condition)
   return [dt.load_df(batches[i]) for i in range(len(batches))]
 
 def get_protein_replicates(pd_samples, protein, condition):
@@ -59,12 +56,12 @@ def count_databases():
   nb_inter = []
   bd = []
   bd2 = []
-  for p in PROTEIN :
+  for p in PROTEINS :
     check = False;check_c = False
     for c in CONDITION : 
       check = False
       check_c = False
-      rep = get_protein_replicates(all_samples, p, c)
+      rep = get_protein_replicates(pd_samples, p, c)
       inter = len(intersect_index(rep))
       if inter != 0:
         check = True
@@ -74,7 +71,7 @@ def count_databases():
       if check == True:
         bd.append(rep[0]['Database'][0])
         ctr = 'MG1655 (placI)mVenus-SPA-pUC19 (TYPE C2)'
-        rep = get_control_replicates(all_controls, ctr, c)
+        rep = get_control_replicates(pd_controls, ctr, c)
         bd2.append(rep[0]['Database'][0])
         inter = len(intersect_index(rep))
         if inter != 0:
@@ -90,7 +87,7 @@ def count_databases():
   for c in CONDITION : 
     check = False
     for ctr in CONTROL :
-      rep = get_control_replicates(all_controls, ctr, c)
+      rep = get_control_replicates(pd_controls, ctr, c)
       inter = len(intersect_index(rep))
       if inter != 0:
         check = True
@@ -108,18 +105,18 @@ def good_proteins():
   To do so, we check if the intersection of index replicates is empty or not.'''
   bdp = ''; bdc = ''
   good_proteins = []
-  for p in PROTEIN :
+  for p in PROTEINS :
 #    check = False; check_c = False
     for c in CONDITION : 
       check = False
       check_c = False
-      rep = get_protein_replicates(all_samples, p, c)
+      rep = get_protein_replicates(pd_samples, p, c)
       inter = len(intersect_index(rep))
       if inter != 0:
         check = True
         bdp = rep[0]['Database'][0]
         ctr = 'MG1655 (placI)mVenus-SPA-pUC19 (TYPE C2)'
-        rep = get_control_replicates(all_controls, ctr, c)
+        rep = get_control_replicates(pd_controls, ctr, c)
         bdc = rep[0]['Database'][0]
         if bdp == bdc:
           good_proteins.append((p,c))
@@ -270,9 +267,8 @@ def create_csv_genes(bfNumber):
 def create_csv_genes_good_proteins():
   '''Create all the new files that will be used.'''
   dt.header('proteins')
-  all_samples = dt.load_based_screen_samples()
   for my_tuple in dt.good_proteins():
-    batch_names = dt.get_batches(all_samples,my_tuple[0], my_tuple[1])
+    batch_names = dt.get_batches(pd_samples,my_tuple[0], my_tuple[1])
     for bname in batch_names:
       print(bname)
 #      create_csv_genes(bname)
@@ -334,7 +330,7 @@ def create_all_csv_unique_gene():
   '''Create new csv that contain each gene only once for each bfNumber used.'''
   used_prot_tuples = dt.good_proteins()
   for prot1 in used_prot_tuples:
-    prot_batches = dt.get_batches(all_samples, prot1[0], prot1[1])
+    prot_batches = dt.get_batches(pd_samples, prot1[0], prot1[1])
     for bname in prot_batches:
       print(bname)
       create_csv_unique_gene(bname)

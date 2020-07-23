@@ -1,12 +1,7 @@
+from globvar import *
 import Load_PPI_screen as dt
 import Data_processing as dp
-import csv
-import numpy as np
-import matplotlib.pyplot as plt
-import pandas as pd
-import os
 #from matplotlib.ticker import FormatStrFormatter
-from scipy import stats
 import statsmodels.stats.multitest
 
 params = {
@@ -240,18 +235,28 @@ def get_repeated_proteins(used_prot_tuples):
 
 def load_df_equal_test():
   os.chdir("/home/carlier/Documents/Stage/Interactome_proteins_ecoli/") # where is the MS data
-  path = "MS data csv reportbuilder-20200408T212019Z-001/Significant_proteins/contaminant_or_not.csv" 
+  path = "MS data csv reportbuilder-20200408T212019Z-001/contaminant_or_not.csv" 
 #  df = pd.read_csv(path, header=0, sep =';', usecols = lambda column : column not in ['Potential contaminant','Not contaminant'])
   df = pd.read_csv(path, header=0, sep =';')
   df = df.set_index(['Bait protein', 'Condition'])
   return df
 
-def load_df_table_maxQ(prot1, LFQ):
+def load_df_table_maxQ(prot1, LFQ, normalize):
   '''Load dataframe from new files with all gene names for raw or LFQ.'''
   path_batch = "maxQ/SEGREGATED-20200619T092017Z-001/Protein_table/"
   if LFQ == True:
     full_path = path_batch+ prot1[0]+"_"+prot1[1].replace('/', '_')+'_LFQ.csv'
-  else:
+  elif normalize == 0:
     full_path = path_batch+ prot1[0]+"_"+prot1[1].replace('/', '_')+'_Int.csv'
+  elif normalize == 1:
+    full_path = path_batch+ prot1[0]+"_"+prot1[1].replace('/', '_')+'_Int_Norm_Med.csv'
+  elif normalize == 2:
+    full_path = path_batch+ prot1[0]+"_"+prot1[1].replace('/', '_')+'_Int_Norm_Bait.csv'
+  elif normalize == 3:
+    full_path = path_batch+ prot1[0]+"_"+prot1[1].replace('/', '_')+'_Int_Norm_Q1.csv'
+  elif normalize == 4:
+    full_path = path_batch+ prot1[0]+"_"+prot1[1].replace('/', '_')+'_Int_Norm_Q3.csv'
+  else:
+    print('error in normalize value')
   df = pd.read_csv(full_path, sep=',', header=0, index_col = 0)
   return df
