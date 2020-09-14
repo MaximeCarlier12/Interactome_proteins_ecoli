@@ -274,7 +274,6 @@ def mean_confidence_interval(data, confidence, variance = 0):
 #print(res)
 #print(res.shape)
 
-
 def test_normal_equal_var(prot, threshold):
   '''Test de z'''
   df = hd.load_df_table(prot, True)
@@ -315,7 +314,6 @@ def test_normal_equal_var(prot, threshold):
 #for i in used_prot_tuples:
 #  dt.header(i[0]+ 'in '+i[1])
 #  test_normal_equal_var(i, 0.25)
-
 
 def corrected_ttest(prot, threshold):
   '''Welch test = (mA-mB)/sqrt(sA^2/nA+nB^2/nB) against both controls, one at a time. Variance is estimated for the whole file, it is a global variance.'''

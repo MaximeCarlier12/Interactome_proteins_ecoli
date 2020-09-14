@@ -18,6 +18,7 @@ CONTROL = ['MG1655 (TYPE A)', 'MG1655 (placI)mVenus-SPA-pUC19 (TYPE C2)', 'MG165
 PROTEINS = ['DnaA', 'DiaA', 'Hda', 'SeqA', 'HolD','DnaB', 'DnaG', 'NrdB']
 
 mydir = "/home/carlier/Documents/Stage/Interactome_proteins_ecoli/"
+os.chdir(mydir)
 
 pd_samples = dt.load_based_screen_samples()
 pd_controls = dt.load_based_screen_controls()

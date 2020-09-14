@@ -4,26 +4,10 @@ import Data_processing as dp
 #from matplotlib.ticker import FormatStrFormatter
 import statsmodels.stats.multitest
 
-params = {
-    'pdf.fonttype': 42,
-    'ps.fonttype': 42,
-   'axes.labelsize': 11,
-   'font.size': 11,
-   'legend.fontsize': 9,
-   'xtick.labelsize': 10,
-   'ytick.labelsize': 10,
-   'text.usetex': False,
-   'axes.linewidth':1.5, #0.8
-   'axes.titlesize':11,
-   'axes.spines.top':True,
-   'axes.spines.right':True,
-   'font.family': "Arial"
-   }
-plt.rcParams.update(params)
+used_prot_tuples = dp.good_proteins() 
 
 def load_df_unique_gene(bfNumber):
   '''Load dataframe from new files with all gene names.'''
-  os.chdir("/home/carlier/Documents/Stage/Interactome_proteins_ecoli/") # where is the MS data
   path_batch = "MS data csv reportbuilder-20200408T212019Z-001/MS data csv reportbuilder/"
   letter = bfNumber[0]
   number = bfNumber[1:]
@@ -31,13 +15,6 @@ def load_df_unique_gene(bfNumber):
   df = pd.read_csv(full_path, sep=',', header=0)
   df = df.set_index("Accession_number")
   return df
-
-pd_samples = dt.load_based_screen_samples()
-pd_controls = dt.load_based_screen_controls()
-used_prot_tuples = dp.good_proteins() 
-#contaminant_genes = dt.load_contaminant_list()
-controls_typeC = {'LB log':['S1','S2','S3'], 'LB O/N':['O9', 'R4', 'R5'], 'M9 0.2% ac O/N':['R1', 'R2', 'R3']}
-controls_typeA = {'LB log':['L1', 'T7', 'T8', 'T9'], 'LB O/N':['C13', 'P5', 'U10'], 'M9 0.2% ac O/N':['A10', 'T5', 'T6']}
 
 def used_bnames(used_prot_tuples):
   '''List of batch names used'''
@@ -65,14 +42,14 @@ def df_intersect(my_list):
 def file_result(filename):
   '''Outputs all proteins in control intersect and test intersect. '''
   myfile = open(filename, 'w')
-  for prot1 in used_prot_tuples:
-    prot_batches = dt.get_batches(pd_samples, prot1[0], prot1[1])
+  for prot in used_prot_tuples:
+    prot_batches = dt.get_batches(pd_samples, prot[0], prot[1])
     rep = [load_df_unique_gene(i) for i in prot_batches]
-    ctr = [load_df_unique_gene(i) for i in controls_typeC[prot1[1]]]
+    ctr = [load_df_unique_gene(i) for i in controls_typeC[prot[1]]]
     intR = intersect(rep)
     intC = intersect(ctr)
     pattern = '|'.join(intersect(ctr))
-    myfile.write('(Protein) '+ prot1[0]+ ' (Condition) '+ prot1[1] + ':\n')
+    myfile.write('(Protein) '+ prot[0]+ ' (Condition) '+ prot[1] + ':\n')
     myfile.write('\tLen rep intersect '+ str(len(intR))+ '\n')
     pNamesR = rep[0].Protein_name.values[rep[0].Gene_name.isin(list(intR))]
     myfile.write('\tCommon rep proteins :\n')    
@@ -85,13 +62,13 @@ def file_result(filename):
       myfile.write(i+'\n')   
     myfile.write('\n')
 
-def create_table(used_prot_tuples):
+def create_all_tables(used_prot_tuples):
   '''Create a file containing emPAI values for each gene present at list once for test and controls replicates. Absence equals to 0.'''
-  for prot1 in used_prot_tuples:
-    prot_batches = dt.get_batches(pd_samples, prot1[0], prot1[1])
+  for prot in used_prot_tuples:
+    prot_batches = dt.get_batches(pd_samples, prot[0], prot[1])
     rep = [load_df_unique_gene(i) for i in prot_batches]
-    ctrC = [load_df_unique_gene(i) for i in controls_typeC[prot1[1]]]
-    ctrA = [load_df_unique_gene(i) for i in controls_typeA[prot1[1]]]
+    ctrC = [load_df_unique_gene(i) for i in controls_typeC[prot[1]]]
+    ctrA = [load_df_unique_gene(i) for i in controls_typeA[prot[1]]]
     all_genes = []
     for i in rep:
       all_genes += list(i.Gene_name)
@@ -115,23 +92,23 @@ def create_table(used_prot_tuples):
     for (i,repi) in enumerate(ctrA):
       for index, row in repi.iterrows():
         df.loc[row.Gene_name, feature_list[6+i]] = row.emPAI
-    df.to_csv(path_batch+ prot1[0]+"_"+prot1[1].replace('/', '_')+'.csv')
+    df.to_csv(path_batch+ prot[0]+"_"+prot[1].replace('/', '_')+'.csv')
 
-def load_df_table(prot1, multiple = False):
+def load_df_table(prot, multiple = False):
   '''Load dataframe from new files with all gene names or unique gene name by adding unique = True.'''
   path_batch = "MS data csv reportbuilder-20200408T212019Z-001/Used_proteins_csv/"
   if multiple == False:
-    full_path = path_batch+ prot1[0]+"_"+prot1[1].replace('/', '_')+'.csv'
+    full_path = path_batch+ prot[0]+"_"+prot[1].replace('/', '_')+'.csv'
   else :
-    full_path = path_batch+ prot1[0]+"_"+prot1[1].replace('/', '_')+'_multipleRep'+'.csv'
+    full_path = path_batch+ prot[0]+"_"+prot[1].replace('/', '_')+'_multipleRep'+'.csv'
   df = pd.read_csv(full_path, sep=',', header=0, index_col = 0)
   return df
 
-def create_condensed_table(used_prot_tuples, threshold):
+def create_all_condensed_tables(used_prot_tuples, threshold):
   '''For each protein used : creates a file containing emPAI values for each gene present in 2 replicates of test protein files for test and controls.
   threshold can be a specific value, 0.01 or min_value'''
-  for prot1 in used_prot_tuples:
-    df = load_df_table(prot1)
+  for prot in used_prot_tuples:
+    df = load_df_table(prot)
     indexes = []
     for index, row in df.iterrows():
       counter = 0
@@ -160,13 +137,13 @@ def create_condensed_table(used_prot_tuples, threshold):
         indexes.append(index)
     df = df.loc[df.index.isin(indexes)]
     path_batch = "MS data csv reportbuilder-20200408T212019Z-001/Used_proteins_csv/"
-    df.to_csv(path_batch+ prot1[0]+"_"+prot1[1].replace('/', '_')+'_multipleRep.csv')
+    df.to_csv(path_batch+ prot[0]+"_"+prot[1].replace('/', '_')+'_multipleRep.csv')
   return threshold
 
 def alone_rep():
   '''Create a file containing proteins that are present in only one replicate.'''
-  prot1 = used_prot_tuples[0]
-  df = load_df_table(prot1)
+  prot = used_prot_tuples[0]
+  df = load_df_table(prot)
   indexes = []
   for index, row in df.iterrows():
     counter = 0
@@ -178,11 +155,11 @@ def alone_rep():
       counter += 1
     if counter > 1:
       indexes.append(index)
-  prot_batches = dt.get_batches(pd_samples, prot1[0], prot1[1])
+  prot_batches = dt.get_batches(pd_samples, prot[0], prot[1])
   rep = [load_df_unique_gene(i) for i in prot_batches]
   df_select = rep[0].loc[rep[0].Gene_name.isin(indexes)]
   path_batch = "MS data csv reportbuilder-20200408T212019Z-001/Used_proteins_csv/"
-  df_select.to_csv(path_batch+ prot1[0]+"_"+prot1[1].replace('/', '_')+'_alone.csv')
+  df_select.to_csv(path_batch+ prot[0]+"_"+prot[1].replace('/', '_')+'_alone.csv')
 
 def nbr_prot_file():
   '''Print number of prot per file '''
@@ -234,28 +211,27 @@ def get_repeated_proteins(used_prot_tuples):
     print()
 
 def load_df_equal_test():
-  os.chdir("/home/carlier/Documents/Stage/Interactome_proteins_ecoli/") # where is the MS data
   path = "MS data csv reportbuilder-20200408T212019Z-001/contaminant_or_not.csv" 
 #  df = pd.read_csv(path, header=0, sep =';', usecols = lambda column : column not in ['Potential contaminant','Not contaminant'])
   df = pd.read_csv(path, header=0, sep =';')
   df = df.set_index(['Bait protein', 'Condition'])
   return df
 
-def load_df_table_maxQ(prot1, LFQ, normalize):
+def load_df_table_maxQ(prot, LFQ, normalize):
   '''Load dataframe from new files with all gene names for raw or LFQ.'''
   path_batch = "maxQ/SEGREGATED-20200619T092017Z-001/Protein_table/"
   if LFQ == True:
-    full_path = path_batch+ prot1[0]+"_"+prot1[1].replace('/', '_')+'_LFQ.csv'
+    full_path = path_batch+ prot[0]+"_"+prot[1][:6].replace('/', '_')+'_LFQ.csv'
   elif normalize == 0:
-    full_path = path_batch+ prot1[0]+"_"+prot1[1].replace('/', '_')+'_Int.csv'
+    full_path = path_batch+ prot[0]+"_"+prot[1][:6].replace('/', '_')+'_Int.csv'
   elif normalize == 1:
-    full_path = path_batch+ prot1[0]+"_"+prot1[1].replace('/', '_')+'_Int_Norm_Med.csv'
+    full_path = path_batch+ prot[0]+"_"+prot[1][:6].replace('/', '_')+'_Int_Norm_Med.csv'
   elif normalize == 2:
-    full_path = path_batch+ prot1[0]+"_"+prot1[1].replace('/', '_')+'_Int_Norm_Bait.csv'
+    full_path = path_batch+ prot[0]+"_"+prot[1][:6].replace('/', '_')+'_Int_Norm_Bait.csv'
   elif normalize == 3:
-    full_path = path_batch+ prot1[0]+"_"+prot1[1].replace('/', '_')+'_Int_Norm_Q1.csv'
+    full_path = path_batch+ prot[0]+"_"+prot[1][:6].replace('/', '_')+'_Int_Norm_Q1.csv'
   elif normalize == 4:
-    full_path = path_batch+ prot1[0]+"_"+prot1[1].replace('/', '_')+'_Int_Norm_Q3.csv'
+    full_path = path_batch+ prot[0]+"_"+prot[1][:6].replace('/', '_')+'_Int_Norm_Q3.csv'
   else:
     print('error in normalize value')
   df = pd.read_csv(full_path, sep=',', header=0, index_col = 0)

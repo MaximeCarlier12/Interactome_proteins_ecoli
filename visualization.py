@@ -31,6 +31,10 @@ def venn_diagram(data, names):
 
 def venn_three_rep(used_prot_tuples, data_type):
   '''Venn diagram of replicate of protein test for all used proteins. '''
+  fig,ax = plt.subplots()
+  # width = 12.5 ; height = 6.35 # taille finale de ta figure png
+  width = 14.4 ; height= 7.15 # taille finale de ta figure svg
+  fig.set_size_inches(width, height)
   venn_data_type = {0:'emPAI', 1:'raw int', 2:'LFQ int'}
   plt.suptitle('Venn diagrams in replicates of a protein test')
   j = 0
@@ -80,6 +84,7 @@ def venn_two_rep(used_prot_tuples, data_type):
     plt.title(prot[0]+' in '+prot[1])
     venn_diagram(rep, prot_batches)
   plt.show()
+# venn_two_rep(qt.prot_two_rep(), 0) # venn diagram for condition with 2 replicates
 
 def venn_ctr(used_prot_tuples, controls_dico, control_type, data_type):
   '''Venn diagram of replicates of a given control for all used proteins. We check if some files can't be used (e.g. A10)'''
@@ -97,6 +102,9 @@ def venn_ctr(used_prot_tuples, controls_dico, control_type, data_type):
     venn_diagram(ctr, controls_dico[cond])
   plt.show()
 
+# venn_ctr(prot_3_reps, controls_typeA, 'A', 0) # venn diagram for ctrA
+# venn_ctr(prot_3_reps, controls_typeC, 'C', 0) # venn diagram for ctrC
+
 def venn_inter(used_prot_tuples, controls_dico):
   '''Venn diagram between intersect control and test.'''
   plt.suptitle('Venn diagrams of intersection of controls and replicates')
@@ -112,7 +120,7 @@ def venn_inter(used_prot_tuples, controls_dico):
   plt.show()
 
 prot_3_reps = qt.prot_three_rep()
-# venn_three_rep(qt.prot_three_rep(), 1)
+venn_three_rep(qt.prot_three_rep(), 1)
 # venn_two_rep(qt.prot_two_rep(), 2)
 # venn_ctr(prot_3_reps, controls_typeA, 'A', 2)
 # venn_ctr(prot_3_reps, controls_typeC, 'C', 2)

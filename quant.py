@@ -7,7 +7,6 @@ import glob
 import statsmodels.stats.multitest
 import matplotlib.patches as mpatches
 
-os.chdir(mydir)
 plt.rcParams.update(params)
 
 def all_proteins():
@@ -174,6 +173,7 @@ def normalize_bait_batch(bn, bait_name):
     print('not found for :'+ bn)
 
 def create_all_norm_files(prot_3_rep):
+  '''For each condition [protein, growth cond], it creates 3 files for the 3 different normalizations (median, q1, q3).'''
   med_values = []
   q3_values = []
   for prot in prot_3_rep:
@@ -210,13 +210,6 @@ def log10_calculation_new(df):
   for i in df.columns:
     newname = i+'_log10' 
     df[newname] = np.log10(df[i])
-  return df
-
-def log2_calculation_new(df):
-  '''Calculation of intensity logs10 and for a specific protein/condition.'''
-  for i in df.columns:
-    newname = i+'_log10' 
-    df[newname] = np.log2(df[i])
   return df
 
 def link_ctr_rep(prot, LFQ, normalize):
@@ -311,23 +304,40 @@ def create_table(prot, LFQ, normalize):
     df = log10_calculation_new(df)
   else:
     df = log10_calculation_new(df)
+  cond = prot[1][:6].replace('/', '_')
   if LFQ == True:
-    df.to_csv(path_batch+ prot[0]+"_"+prot[1].replace('/', '_')+'_LFQ.csv')
+    df.to_csv(path_batch+ prot[0]+"_"+cond+'_LFQ.csv')
   elif normalize == 0:
-    df.to_csv(path_batch+ prot[0]+"_"+prot[1].replace('/', '_')+'_Int.csv')
+    df.to_csv(path_batch+ prot[0]+"_"+cond+'_Int.csv')
   elif normalize == 1:
-    df.to_csv(path_batch+ prot[0]+"_"+prot[1].replace('/', '_')+'_Int_Norm_Med.csv')
+    df.to_csv(path_batch+ prot[0]+"_"+cond+'_Int_Norm_Med.csv')
   elif normalize == 2:
-    df.to_csv(path_batch+ prot[0]+"_"+prot[1].replace('/', '_')+'_Int_Norm_Bait.csv')
+    df.to_csv(path_batch+ prot[0]+"_"+cond+'_Int_Norm_Bait.csv')
   elif normalize == 3:
-    df.to_csv(path_batch+ prot[0]+"_"+prot[1].replace('/', '_')+'_Int_Norm_Q1.csv')
+    df.to_csv(path_batch+ prot[0]+"_"+cond+'_Int_Norm_Q1.csv')
   elif normalize == 4:
-    df.to_csv(path_batch+ prot[0]+"_"+prot[1].replace('/', '_')+'_Int_Norm_Q3.csv')
+    df.to_csv(path_batch+ prot[0]+"_"+cond+'_Int_Norm_Q3.csv')
   return threshold
+
+def save_table_update(df, prot, LFQ, normalize):
+  path_batch = "maxQ/SEGREGATED-20200619T092017Z-001/Protein_table/"
+  if LFQ == True:
+    df.to_csv(path_batch+ prot[0]+"_"+prot[1][:6].replace('/', '_')+'_LFQ.csv')
+  elif normalize == 0:
+    df.to_csv(path_batch+ prot[0]+"_"+prot[1][:6].replace('/', '_')+'_Int.csv')
+  elif normalize == 1:
+    df.to_csv(path_batch+ prot[0]+"_"+prot[1][:6].replace('/', '_')+'_Int_Norm_Med.csv')
+  elif normalize == 2:
+    df.to_csv(path_batch+ prot[0]+"_"+prot[1][:6].replace('/', '_')+'_Int_Norm_Bait.csv')
+  elif normalize == 3:
+    df.to_csv(path_batch+ prot[0]+"_"+prot[1][:6].replace('/', '_')+'_Int_Norm_Q1.csv')
+  elif normalize == 4:
+    df.to_csv(path_batch+ prot[0]+"_"+prot[1][:6].replace('/', '_')+'_Int_Norm_Q3.csv')
+  else :
+    print('error : filename not possible to establish')
 
 def log10_calculation(prot, LFQ, normalize):
   '''Calculation of intensity logs10 and for a specific protein/condition.'''
-  path_batch = "maxQ/SEGREGATED-20200619T092017Z-001/Protein_table/"
   df = hd.load_df_table_maxQ(prot, LFQ, normalize)
   if 'CtrC4' in df:
     df = df[['Rep1', 'Rep2', 'Rep3', 'CtrC1', 'CtrC2', 'CtrC3', 'CtrA1','CtrA2', 'CtrA3', 'CtrA4']]
@@ -336,18 +346,7 @@ def log10_calculation(prot, LFQ, normalize):
   for i in df.columns:
     newname = i+'_log10'
     df[newname] = np.log10(df[i])
-  if LFQ == True:
-    df.to_csv(path_batch+ prot[0]+"_"+prot[1].replace('/', '_')+'_LFQ.csv')
-  elif normalize == 0:
-    df.to_csv(path_batch+ prot[0]+"_"+prot[1].replace('/', '_')+'_Int.csv')
-  elif normalize == 1:
-    df.to_csv(path_batch+ prot[0]+"_"+prot[1].replace('/', '_')+'_Int_Norm_Med.csv')
-  elif normalize == 2:
-    df.to_csv(path_batch+ prot[0]+"_"+prot[1].replace('/', '_')+'_Int_Norm_Bait.csv')
-  elif normalize == 3:
-    df.to_csv(path_batch+ prot[0]+"_"+prot[1].replace('/', '_')+'_Int_Norm_Q1.csv')
-  elif normalize == 4:
-    df.to_csv(path_batch+ prot[0]+"_"+prot[1].replace('/', '_')+'_Int_Norm_Q3.csv')
+  save_table_update(df, prot, LFQ, normalize)
 
 def get_df_to_variance(prot, data, threshold, LFQ, normalize):
   '''Statistical test that checks if variance is similar or not between predatory proteins of a similar bait protein. H0 is equal variance.
@@ -579,21 +578,10 @@ def non_eq_var_ttest(prot, threshold, LFQ, normalize):
     else: return False 
   #  df['C_is'] = df.apply (lambda row: pval_is(row, 'pvalC'), axis=1)
   #  df['A_is'] = df.apply (lambda row: pval_is(row, 'pvalA'), axis=1)
-  path_batch = "maxQ/SEGREGATED-20200619T092017Z-001/Protein_table/"
-  if LFQ == True:
-    df.to_csv(path_batch+ prot[0]+"_"+prot[1].replace('/', '_')+'_LFQ.csv')
-  elif normalize == 0:
-    df.to_csv(path_batch+ prot[0]+"_"+prot[1].replace('/', '_')+'_Int.csv')
-  elif normalize == 1:
-    df.to_csv(path_batch+ prot[0]+"_"+prot[1].replace('/', '_')+'_Int_Norm_Med.csv')   
-  elif normalize == 2:
-    df.to_csv(path_batch+ prot[0]+"_"+prot[1].replace('/', '_')+'_Int_Norm_Bait.csv')
-  elif normalize == 3:
-    df.to_csv(path_batch+ prot[0]+"_"+prot[1].replace('/', '_')+'_Int_Norm_Q1.csv')
-  elif normalize == 4:
-    df.to_csv(path_batch+ prot[0]+"_"+prot[1].replace('/', '_')+'_Int_Norm_Q3.csv')
+  save_table_update(df, prot, LFQ, normalize)
 
 def prot_absent_controls(prot, threshold, LFQ, normalize):
+  '''On the table file, it adds a column 'Absent_ctrA' and 'Absent_ctrC' that tells if a protein is at least in one replicate of this control or not. '''
   df = hd.load_df_table_maxQ(prot, LFQ, normalize)
   abs_ctrC =[] # triangle if absent in control
   abs_ctrA = [] 
@@ -616,22 +604,9 @@ def prot_absent_controls(prot, threshold, LFQ, normalize):
       df.loc[my_index, 'Absent_ctrC'] = True
     else : 
       df.loc[my_index, 'Absent_ctrC'] = False
+  save_table_update(df, prot, LFQ, normalize)
 
-  path_batch = "maxQ/SEGREGATED-20200619T092017Z-001/Protein_table/"
-  if LFQ == True:
-    df.to_csv(path_batch+ prot[0]+"_"+prot[1].replace('/', '_')+'_LFQ.csv')
-  elif normalize == 0:
-    df.to_csv(path_batch+ prot[0]+"_"+prot[1].replace('/', '_')+'_Int.csv')
-  elif normalize == 1:
-    df.to_csv(path_batch+ prot[0]+"_"+prot[1].replace('/', '_')+'_Int_Norm_Med.csv')   
-  elif normalize == 2:
-    df.to_csv(path_batch+ prot[0]+"_"+prot[1].replace('/', '_')+'_Int_Norm_Bait.csv')
-  elif normalize == 3:
-    df.to_csv(path_batch+ prot[0]+"_"+prot[1].replace('/', '_')+'_Int_Norm_Q1.csv')
-  elif normalize == 4:
-    df.to_csv(path_batch+ prot[0]+"_"+prot[1].replace('/', '_')+'_Int_Norm_Q3.csv')
-
-def get_global_variance(prot, threshold, LFQ, normalize):
+def get_global_variance_per_prot(prot, threshold, LFQ, normalize):
   '''Returns the global variance for test and ctrC and ctrA for each protein/grotwh condition.'''
   all_vars = []
   flat_list = []
@@ -682,7 +657,8 @@ def get_global_variance(prot, threshold, LFQ, normalize):
   # plt.close()
   return np.var(flat_list, ddof = 1)
 
-def get_common_variances(used_prot_tuples, threshold, LFQ, normalize):
+def get_common_variances_per_media(used_prot_tuples, threshold, LFQ, normalize):
+  '''Calculation of a variance per growth condition (only 3 different variances). This variance will be prefered to '''
   three_common_var = {}
   for gw_cond in CONDITION: # 3 common variances
     flat_list = []
@@ -739,7 +715,7 @@ def get_common_variances(used_prot_tuples, threshold, LFQ, normalize):
 def test_normal_equal_var(prot, threshold, LFQ, normalize, common_variance):
   '''Test de z'''
   df = hd.load_df_table_maxQ(prot, LFQ, normalize)
-  # glob_var = get_global_variance(prot, threshold, LFQ, normalize)
+  # glob_var = get_global_variance_per_prot(prot, threshold, LFQ, normalize)
   glob_var = common_variance[prot[1]]
   print('global_var :', glob_var)
   df['glob_var'] = glob_var
@@ -782,25 +758,11 @@ def test_normal_equal_var(prot, threshold, LFQ, normalize, common_variance):
       df.loc[my_index,'adj_pvalC'] = adj_pval_C[1][iterC]
       df.loc[my_index, 'C_is'] = adj_pval_C[0][iterC]
       iterC += 1
-
   #  print(df['pvalC'])
-  path_batch = "maxQ/SEGREGATED-20200619T092017Z-001/Protein_table/"
-  if LFQ == True:
-    df.to_csv(path_batch+ prot[0]+"_"+prot[1].replace('/', '_')+'_LFQ.csv')
-  elif normalize == 0:
-    df.to_csv(path_batch+ prot[0]+"_"+prot[1].replace('/', '_')+'_Int.csv')
-  elif normalize == 1:
-    df.to_csv(path_batch+ prot[0]+"_"+prot[1].replace('/', '_')+'_Int_Norm_Med.csv')   
-  elif normalize == 2:
-    df.to_csv(path_batch+ prot[0]+"_"+prot[1].replace('/', '_')+'_Int_Norm_Bait.csv')
-  elif normalize == 3:
-    df.to_csv(path_batch+ prot[0]+"_"+prot[1].replace('/', '_')+'_Int_Norm_Q1.csv')
-  elif normalize == 4:
-    df.to_csv(path_batch+ prot[0]+"_"+prot[1].replace('/', '_')+'_Int_Norm_Q3.csv')
+  save_table_update(df, prot, LFQ, normalize)
 
 def fold_change(prot, LFQ, normalize):
   '''Calculate log2 of fold change for each protein. Creates 2 columns fo each control : FC and log2FC. Keep only log2(FC)>1.5 or >0.6 ? It means FC = 2.8 or FC>2'''
-  path_batch = "maxQ/SEGREGATED-20200619T092017Z-001/Protein_table/"
   df = hd.load_df_table_maxQ(prot, LFQ, normalize)
   print('mean', df[['Rep1', 'Rep2', 'Rep3']].mean(axis = 1))
   if 'CtrA4' in df.columns:
@@ -811,22 +773,7 @@ def fold_change(prot, LFQ, normalize):
   df['FC_C'] = df[['Rep1', 'Rep2', 'Rep3']].mean(axis = 1)/df[['CtrC1', 'CtrC2', 'CtrC3']].mean(axis =1)
   df['log2FC_A'] = np.log2(df['FC_A'])
   df['log2FC_C'] = np.log2(df['FC_C'])
-  if LFQ == True:
-    filename = path_batch+ prot[0]+"_"+prot[1].replace('/', '_')+'_LFQ.csv'
-  elif normalize == 0:
-    filename = path_batch+ prot[0]+"_"+prot[1].replace('/', '_')+'_Int.csv'
-  elif normalize == 1:
-    filename = path_batch+ prot[0]+"_"+prot[1].replace('/', '_')+'_Int_Norm_Med.csv'
-  elif normalize == 2:
-    filename = path_batch+ prot[0]+"_"+prot[1].replace('/', '_')+'_Int_Norm_Bait.csv'
-  elif normalize == 3:
-    filename = path_batch+ prot[0]+"_"+prot[1].replace('/', '_')+'_Int_Norm_Q1.csv'
-  elif normalize == 4:
-    filename = path_batch+ prot[0]+"_"+prot[1].replace('/', '_')+'_Int_Norm_Q3.csv'
-  else :
-    print('error : filename not possible to establish')
-  print(filename)
-  df.to_csv(filename)
+  save_table_update(df, prot, LFQ, normalize)
 
 def max_int_replicates(prot, LFQ, normalize):
   '''Know which replicate has highest values.'''
@@ -1021,7 +968,7 @@ def plot_log10_abundance(prot, threshold, LFQ, normalize, common_variance):
   # Confidence interval
 
   df_rep = np.log10(df[['Rep1', 'Rep2', 'Rep3']])
-  # mean_conf_int = st.mean_confidence_interval(df_rep, 0.95, get_global_variance(prot, threshold, LFQ, normalize))
+  # mean_conf_int = st.mean_confidence_interval(df_rep, 0.95, get_global_variance_per_prot(prot, threshold, LFQ, normalize))
   mean_conf_int = st.mean_confidence_interval(df_rep, 0.95, common_variance[prot[1]])
 
   mean_conf_int = mean_conf_int.reindex(index = df.index)
@@ -1030,7 +977,7 @@ def plot_log10_abundance(prot, threshold, LFQ, normalize, common_variance):
   ax.fill_between(mean_conf_int.index, mean_conf_int['conf_inf'], mean_conf_int['conf_sup'], color='royalblue', alpha=.08)
 
   df_ctr = np.log10(df[['CtrC1', 'CtrC2', 'CtrC3']])
-  # mean_conf_int = st.mean_confidence_interval(df_ctr, 0.95, get_global_variance(prot, threshold, LFQ, normalize))
+  # mean_conf_int = st.mean_confidence_interval(df_ctr, 0.95, get_global_variance_per_prot(prot, threshold, LFQ, normalize))
   mean_conf_int = st.mean_confidence_interval(df_ctr, 0.95, common_variance[prot[1]])
 
   mean_conf_int = mean_conf_int.reindex(index = df.index)
@@ -1042,7 +989,7 @@ def plot_log10_abundance(prot, threshold, LFQ, normalize, common_variance):
     df_ctr = np.log10(df[['CtrA1', 'CtrA2', 'CtrA3', 'CtrA4']])
   else:
     df_ctr = np.log10(df[['CtrA1', 'CtrA2', 'CtrA3']])
-  # mean_conf_int = st.mean_confidence_interval(df_ctr, 0.95, get_global_variance(prot, threshold, LFQ, normalize))
+  # mean_conf_int = st.mean_confidence_interval(df_ctr, 0.95, get_global_variance_per_prot(prot, threshold, LFQ, normalize))
   mean_conf_int = st.mean_confidence_interval(df_ctr, 0.95, common_variance[prot[1]])
   mean_conf_int = mean_conf_int.reindex(index = df.index)
   # print(mean_conf_int)
@@ -1117,6 +1064,9 @@ def create_entire_final_csv(prot, LFQ, normalize):
   df = df[['Gene name', 'Protein names', 'Mean replicates log10', 'Individual variance replicates log10', 'Mean ctrA log10', 'Individual variance ctrA log10', 'Mean ctrC log10', 'Individual variance ctrC log10', 'glob_var', 'adj_pvalA', 'adj_pvalC', 'log2FC_A', 'log2FC_C', 'Putative protein type']]
   df = df.sort_values(by=['adj_pvalA'])
   df = df.rename(columns={"glob_var": "Global variance", "adj_pvalA": "Adjusted pvalue with ctrA", "adj_pvalC": "Adjusted pvalue with ctrC", "log2FC_A" : "Log2 enrichment with ctrA", "log2FC_C" : "Log2 enrichment with ctrC"})
+  comment = "* : a protein is absent from a certain control when the 'Mean ctr log10' value of this control equals -1 (and individual variance of the control equals 0). In that case, the corresponding adjusted pvalue is the pvalue."
+  df.loc['last'] = ['INFORMATION']+[comment]+[None]*(len(df.columns)-2) # specify an information at the end of the file.
+  # df.loc['INFORMATION'] = [comment]+[None]*len(df.columns-1) # specify an information at the end of the file.
   if LFQ == True:
     title_text1 = 'LFQ' # name of the file
   elif normalize == 0:
@@ -1129,12 +1079,12 @@ def create_entire_final_csv(prot, LFQ, normalize):
     title_text1 = 'q1'
   elif normalize == 4:
     title_text1 = 'q3'
-  path_batch = "maxQ/Final_results/"
-  df.to_csv(path_batch+prot[0]+'_'+prot[1][:6].replace('/', '_')+'_'+title_text1+'_summary.csv', index = False)
+  path_batch = "maxQ/Final_results/"+prot[0]+'/'
+  df.to_excel(path_batch+prot[0]+'_'+prot[1][:6].replace('/', '_')+'_'+title_text1+'_summary.xlsx', index = False)
 
 def create_significant_prot_final_csv(prot, LFQ, normalize):
-  '''Same function than create_entire_final_csv but only for significant proteins (absent or significantly enriched compared to one control.'''
-  path_batch = "maxQ/Final_results/"
+  '''Same function than create_entire_final_csv but only for enriched proteins (absent or significantly enriched compared to one control).'''
+  path_batch = "maxQ/Final_results/"+prot[0]+'/'
   if LFQ == True:
     title_text1 = 'LFQ' # name of the file
   elif normalize == 0:
@@ -1149,24 +1099,21 @@ def create_significant_prot_final_csv(prot, LFQ, normalize):
     title_text1 = 'q3'
   else:
     print('error in normalize value')
-  full_path = path_batch+ prot[0]+"_"+prot[1].replace('/', '_')+'_'+title_text1+'_summary.csv'
+  full_path = path_batch+ prot[0]+"_"+prot[1][:6].replace('/', '_')+'_'+title_text1+'_summary.xlsx'
 
-  df_entire = pd.read_csv(full_path, sep=',', header=0, index_col = 0)
+  df_entire = pd.read_excel(full_path, sep=',', header=0, index_col = 0, skipfooter = 1)
   df = hd.load_df_table_maxQ(prot, LFQ, normalize)
   print(df_entire.shape)
   print(df.shape)
 
   df = df_entire[df['Absent_ctrA'] | df['Absent_ctrC']| ((df['adj_pvalA'] <= 0.05) & df['adj_pvalA']) | ((df['adj_pvalC'] <= 0.05) & df['adj_pvalC'])]
   print(df.shape)
-  path_batch = "maxQ/Final_results/"
   comment = "* : a protein is absent from a certain control when the 'Mean ctr log10' value of this control equals -1 (and individual variance of the control equals 0). In that case, the corresponding adjusted pvalue is the pvalue."
-  df_entire.loc[comment] = [None]*len(df.columns) # specify an information at the end of the file.
-  df_entire.to_csv(path_batch+prot[0]+'_'+prot[1][:6].replace('/', '_')+'_'+title_text1+'_summary.csv', index = True)
 
-  df.to_csv(path_batch+prot[0]+'_'+prot[1][:6].replace('/', '_')+'_'+title_text1+'_significant_prots.csv', index = True)
+  df.to_excel(path_batch+prot[0]+'_'+prot[1][:6].replace('/', '_')+'_'+title_text1+'_significant_prots.xlsx', index = True)
 
-def create_putative_proteins_analysis(used_prot_tuples, prot, LFQ, normalize):
-  path_batch = "maxQ/Final_results/"
+def create_putative_proteins_analysis(used_prot_tuples, prot_name, LFQ, normalize):
+  path_batch = "maxQ/Final_results/"+prot_name+'/'
   if LFQ == True:
     title_text1 = 'LFQ' # name of the file
   elif normalize == 0:
@@ -1181,12 +1128,14 @@ def create_putative_proteins_analysis(used_prot_tuples, prot, LFQ, normalize):
     title_text1 = 'q3'
   else:
     print('error in normalize value')
-  all_df = []
+  # filename = path_batch+prot[0]+'_'+title_text1+'_putative_proteins.csv'
+  filename = path_batch+prot_name+'_'+title_text1+'_putative_proteins.xlsx'
+  writer = pd.ExcelWriter(filename, engine='xlsxwriter')
   for cond in CONDITION: # for one bait protein, all the conditions are present in a same file
-    if (prot[0], cond) in used_prot_tuples: # check if this condition has been studied (absence of replicates ?)
-      full_path = path_batch+ prot[0]+"_"+cond[:6].replace('/', '_')+'_'+title_text1+'_significant_prots.csv'
-      df_sig = pd.read_csv(full_path, sep=',', header=0, index_col = 0)
-      df = hd.load_df_table_maxQ((prot[0], cond[:6].replace('/', '_')), LFQ, normalize)
+    if (prot_name, cond) in used_prot_tuples: # check if this condition has been studied (absence of replicates ?)
+      full_path = path_batch+prot_name+"_"+cond[:6].replace('/', '_')+'_'+title_text1+'_significant_prots.xlsx'
+      df_sig = pd.read_excel(full_path, sep=',', header=0, index_col = 0)
+      df = hd.load_df_table_maxQ((prot_name, cond[:6].replace('/', '_')), LFQ, normalize)
 
       cont_NS = []; cont_S = []; interest_S = []; interest_NS = []; unk_S = []; unk_NS = []; conf_S = []; conf_NS = []
       for i in df.index:
@@ -1195,9 +1144,9 @@ def create_putative_proteins_analysis(used_prot_tuples, prot, LFQ, normalize):
           points += 1
         if i in contaminant_genes:
           points += 10
-        if i in interesting_prey:
+        if i in interesting_prey[prot_name]:
           points += 20
-        if i in prey:
+        if i in prey[prot_name]:
           points += 30
         if points == 0:
           unk_NS.append(i)
@@ -1224,28 +1173,15 @@ def create_putative_proteins_analysis(used_prot_tuples, prot, LFQ, normalize):
       unk_NS = ', '.join(unk_NS)
       conf_S = ', '.join(conf_S)
       conf_NS = ', '.join(conf_NS)
-      data = {'Significant': [cont_S, conf_S, interest_S, unk_S], 'Not significant' : [cont_NS, conf_NS, interest_NS, unk_NS]}
+      data = {'Enriched': [cont_S, conf_S, interest_S, unk_S], 'Not enriched' : [cont_NS, conf_NS, interest_NS, unk_NS]}
       df_output = pd.DataFrame(data, index = ['Potential contaminant', 'Well-confirmed prey', 'Interesting prey', 'Unknown'])
-      all_df.append(df_output)
-  if LFQ == True:
-    title_text1 = 'LFQ' # name of the file
-  elif normalize == 0:
-    title_text1 =  'raw'
-  elif normalize == 1:
-    title_text1 = 'med'
-  elif normalize ==2:
-    title_text1 = 'bait'
-  elif normalize == 3:
-    title_text1 = 'q1'
-  elif normalize == 4:
-    title_text1 = 'q3'
-  path_batch = "maxQ/Final_results/"
-  filename = path_batch+prot[0]+'_'+title_text1+'_putative_proteins.csv'
-  with open(filename, 'w') as f:
-    all_df[0].to_csv(f)
-  for i in range(1, len(all_df)):
-    with open(filename, 'a') as f:
-      all_df[i].to_csv(f)
+      df_output.to_excel(writer, sheet_name=cond.replace('/', '_')[:6])
+  writer.save()
+  # with open(filename, 'w') as f:
+  #   all_df[0].to_csv(f)
+  # for i in range(1, len(all_df)):
+  #   with open(filename, 'a') as f:
+  #     all_df[i].to_csv(f)
 
 
 
@@ -1266,12 +1202,19 @@ prot_3_rep = prot_three_rep()
 # print(prot_two_rep())
 threshold_med = 0.1
 threshold_raw = 100000
-# common_variances_med = get_common_variances(prot_3_rep, threshold_med, False, 1)
+
+# for prot in prot_3_rep:
+#   threshold_med = create_table(prot, LFQ = False, normalize = 1)
+#   prot_absent_controls(prot, threshold_med, False, 1)
+#   threshold_q3 = create_table(prot, LFQ = False, normalize = 4)
+#   prot_absent_controls(prot, threshold_med, False, 4)
+
+# common_variances_med = get_common_variances_per_media(prot_3_rep, threshold_med, False, 1)
+# common_variances_q3 = get_common_variances_per_media(prot_3_rep, threshold_med, False, 4)
 
 # create_all_norm_files(prot_3_rep)
-for prot in prot_3_rep:
-  if prot[0] == 'HolD':
-    dt.header(prot[0]+ ' in '+prot[1])
+for prot in []:
+  dt.header(prot[0]+ ' in '+prot[1])
     # link_ctr_rep(prot, False, 1)
   # threshold_raw = create_table(prot, False, 0)
 #   # threshold_bait = create_table(prot, LFQ = False, normalize = 2)
@@ -1284,16 +1227,21 @@ for prot in prot_3_rep:
 #     # max_int_replicates(prot, False, norm)
 #   # non_eq_var_ttest(prot, threshold_med, LFQ = False, normalize = 1)
 
-    # threshold_med = create_table(prot, LFQ = False, normalize = 1)
-    # fold_change(prot, False, 1)
-    # prot_absent_controls(prot, threshold_med, False, 1)
-    # test_normal_equal_var(prot, threshold_med, False, 1, common_variances_med)
-    # plot_log10_abundance(prot, threshold_med, LFQ = False, normalize = 1, common_variance = common_variances_med)
-    create_entire_final_csv(prot, False, 1)
-    create_significant_prot_final_csv(prot, False, 1)
-for prot in prot_3_rep:
-  if prot[0] == 'HolD':
-      create_putative_proteins_analysis(prot_3_rep, prot, False, 1)
+  # for i in [1,4]: # normalize median and q3
+  #   if i==1:
+  #     common_var = common_variances_med
+  #   else:
+  #     common_var = common_variances_q3
+  #   threshold_med = create_table(prot, LFQ = False, normalize = i)
+  #   fold_change(prot, False, i)
+  #   prot_absent_controls(prot, threshold_med, False, i)
+  #   test_normal_equal_var(prot, threshold_med, False, i, common_var)
+  #   plot_log10_abundance(prot, threshold_med, LFQ = False, normalize = i, common_variance = common_var )
+    # create_entire_final_csv(prot, False, i)
+    # create_significant_prot_final_csv(prot, False, i)
+# for prot_name in PROTEINS:
+#   create_putative_proteins_analysis(prot_3_rep, prot_name, False, 1)
+#   create_putative_proteins_analysis(prot_3_rep, prot_name, False, 4)
   
   # test_normal_equal_var(prot, threshold_q1, False, 3)
   # plot_log10_abundance(prot, threshold_q1, LFQ = False, normalize = 3)
