@@ -8,6 +8,7 @@ from scipy import stats
 controls_typeC = {'LB log':['S1','S2','S3'], 'LB O/N':['O9', 'R4', 'R5'], 'M9 0.2% ac O/N':['R1', 'R2', 'R3']}
 controls_typeA = {'LB log':['T7', 'T8', 'T9'], 'LB O/N':['P5', 'U10', 'X17'], 'M9 0.2% ac O/N':['T5', 'T6', 'X16']}
 missing_files = ['A1', 'A2', 'M4', 'M5', 'A9', 'A10', 'I1', 'I2']
+# missing_files = []
 
 prey = {'DnaA':'diaA', 'DiaA':'dnaA', 'DnaB':'dnaC', 'DnaG':'dnaB', 'NrdB':'nrdA', 'HolD':['dnaE', 'dnaN', 'dnaQ', 'dnaX', 'holA', 'holB', 'holC', 'holE'], 'SeqA':'', 'Hda':''} # no preys for hda and seqA.
 

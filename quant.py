@@ -1029,15 +1029,16 @@ def plot_log10_abundance(prot, threshold, LFQ, normalize, common_variance):
   handles.extend([cont_patch, certain_interactor_patch, interesting_interactor_patch]) # add to legend
   plt.legend(handles=handles, loc='upper right')
 
-  path_batch = "maxQ/New_data/Quantitative_plots/"
+  path_batch = "maxQ/New_data/Figures/Quantitative_plots/"
   # get an appropriate plot and saved image.
   manager = plt.get_current_fig_manager() # get full screen
   manager.window.showMaximized() # get full screen
   fig.tight_layout()
   fig.subplots_adjust(left=.05, bottom=.2, right=.96, top=.93) # marges
-  filename = path_batch+prot[0]+'_'+prot[1][:6].replace('/', '_')+'_'+title_text1+'_log10values.png'
-  #  plt.savefig(path_batch+'test.svg') # image vectorisée
-  plt.savefig(filename, transparent=False, dpi = 300) # image pixelisée, dpi = résolution
+  filename_svg = path_batch+'svg/'+prot[0]+'_'+prot[1][:6].replace('/', '_')+'_'+title_text1+'_log10values.svg'
+  filename_png = path_batch+'png/'+prot[0]+'_'+prot[1][:6].replace('/', '_')+'_'+title_text1+'_log10values.png'
+  plt.savefig(filename_svg) # image vectorisée
+  # plt.savefig(filename, transparent=False, dpi = 300) # image pixelisée, dpi = résolution
   # plt.savefig('test_holD.png', transparent=False, dpi = 300) # image pixelisée, dpi = résolution
   # plt.show()
 
@@ -1219,9 +1220,9 @@ threshold_raw = 100000
 
 # common_variances_med = get_common_variances_per_media(prot_3_rep, threshold_med, False, 1)
 # common_variances_q3 = get_common_variances_per_media(prot_3_rep, threshold_med, False, 4)
-
+# common_var = common_variances_med
 # create_all_norm_files(prot_3_rep)
-for prot in []:
+for prot in prot_3_rep[0:1]:
   dt.header(prot[0]+ ' in '+prot[1])
     # link_ctr_rep(prot, False, 1)
   # threshold_raw = create_table(prot, False, 0)
@@ -1244,7 +1245,7 @@ for prot in []:
   #   fold_change(prot, False, i)
   #   prot_absent_controls(prot, threshold_med, False, i)
   #   test_normal_equal_var(prot, threshold_med, False, i, common_var)
-  #   plot_log10_abundance(prot, threshold_med, LFQ = False, normalize = i, common_variance = common_var )
+    # plot_log10_abundance(prot, threshold_med, LFQ = False, normalize = 1, common_variance = common_var )
     # create_entire_final_csv(prot, False, i)
     # create_significant_prot_final_csv(prot, False, i)
 # for prot_name in PROTEINS:

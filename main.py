@@ -45,6 +45,6 @@ def quant_analysis(LFQ_bool, normalization_method):
   for prot_name in PROTEINS:
     qt.create_putative_proteins_analysis(prot_3_rep, prot_name, LFQ_bool, normalization_method) # create 1 file per bait protein that contains the name of all enriched prey proteins. There is one sheet per growth condition (i.e 3 sheets).
 
-# quant_analysis(False, 1)
+quant_analysis(False, 1)
 
 plt.close('all')
