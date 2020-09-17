@@ -219,7 +219,8 @@ def load_df_equal_test():
 
 def load_df_table_maxQ(prot, LFQ, normalize):
   '''Load dataframe from new files with all gene names for raw or LFQ.'''
-  path_batch = "maxQ/SEGREGATED-20200619T092017Z-001/Protein_table/"
+  # path_batch = "maxQ/SEGREGATED-20200619T092017Z-001/Protein_table/"
+  path_batch = "maxQ/New_data/Protein_table/"
   if LFQ == True:
     full_path = path_batch+ prot[0]+"_"+prot[1][:6].replace('/', '_')+'_LFQ.csv'
   elif normalize == 0:

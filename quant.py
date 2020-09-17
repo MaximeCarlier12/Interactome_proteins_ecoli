@@ -19,7 +19,8 @@ def all_proteins():
 
 def get_batches_missing_files(prot_batches):
   '''Some files should not be treated so we don't use them so far. '''
-  missing_files = ['A1', 'A2', 'M4', 'M5', 'A9', 'A10', 'I1', 'I2']
+  # missing_files = ['A1', 'A2', 'M4', 'M5', 'A9', 'A10', 'I1', 'I2']
+  missing_files = []
   for bn in prot_batches: 
     if bn in missing_files:
       prot_batches.remove(bn)
@@ -30,7 +31,7 @@ def prot_two_rep():
   good_proteins = []
   for p in PROTEINS :
     for c in CONDITION :
-      prot_batches = dt.get_batches(pd_samples, p, c)
+      prot_batches = dt.get_batches(pd_samples_new_codes, p, c)
       prot_batches = get_batches_missing_files(prot_batches)
       if len(prot_batches) == 2:
         good_proteins.append((p,c))
@@ -41,7 +42,7 @@ def prot_three_rep():
   good_proteins = []
   for p in PROTEINS :
     for c in CONDITION :
-      prot_batches = dt.get_batches(pd_samples, p, c)
+      prot_batches = dt.get_batches(pd_samples_new_codes, p, c)
       if len(get_batches_missing_files(prot_batches)) >= 3 :
         good_proteins.append((p,c))
   return good_proteins
@@ -49,7 +50,8 @@ def prot_three_rep():
 def load_df_maxQ(bfNumber, norm):
   '''From a batch file number, it gets the right corresponding dataframe. 
   norm = 0 :without norm, 1 : med norm and 2 : bait value norm, 3 : Q1 value, 4: Q3 value.'''
-  path_batch = "maxQ/SEGREGATED-20200619T092017Z-001/SEGREGATED/single files/"
+  # path_batch = "maxQ/SEGREGATED-20200619T092017Z-001/SEGREGATED/single files/"
+  path_batch = "maxQ/New_data/SINGLE FILES-20200916T175228Z-001/SINGLE FILES/"
   # full_path get the only good file and can be in two different ways (containing 'A_5' or 'A5').
   if len(bfNumber) == 1:
     letter = ''
@@ -100,7 +102,8 @@ def normalize_med_file(bn):
   med = df['Intensity_sample'].median(axis = 0)
   print('med', med)
   df['Normalized_intensity'] = df['Intensity_sample']/med
-  path_batch = "maxQ/SEGREGATED-20200619T092017Z-001/SEGREGATED/single files/"
+  # path_batch = "maxQ/SEGREGATED-20200619T092017Z-001/SEGREGATED/single files/"
+  path_batch = "maxQ/New_data/SINGLE FILES-20200916T175228Z-001/SINGLE FILES/"
   if len(bn) == 1:
     letter = ''
     number = bn
@@ -119,7 +122,8 @@ def normalize_q1_file(bn):
   q1 = df['Intensity_sample'].quantile(0.25)
   print('q1', q1)
   df['Normalized_intensity'] = df['Intensity_sample']/q1
-  path_batch = "maxQ/SEGREGATED-20200619T092017Z-001/SEGREGATED/single files/"
+  # path_batch = "maxQ/SEGREGATED-20200619T092017Z-001/SEGREGATED/single files/"
+  path_batch = "maxQ/New_data/SINGLE FILES-20200916T175228Z-001/SINGLE FILES/"
   if len(bn) == 1:
     letter = ''
     number = bn
@@ -138,7 +142,8 @@ def normalize_q3_file(bn):
   q3 = df['Intensity_sample'].quantile(0.75)
   print('q3', q3)
   df['Normalized_intensity'] = df['Intensity_sample']/q3
-  path_batch = "maxQ/SEGREGATED-20200619T092017Z-001/SEGREGATED/single files/"
+  # path_batch = "maxQ/SEGREGATED-20200619T092017Z-001/SEGREGATED/single files/"
+  path_batch = "maxQ/New_data/SINGLE FILES-20200916T175228Z-001/SINGLE FILES/"
   if len(bn) == 1:
     letter = ''
     number = bn
@@ -159,7 +164,8 @@ def normalize_bait_batch(bn, bait_name):
     bait_value = df.loc[bait_name, 'Intensity_sample']
     print('prot name : '+ bait_name+', prot_value : '+ str(bait_value))
     df['Normalized_intensity'] = df['Intensity_sample']/bait_value
-    path_batch = "maxQ/SEGREGATED-20200619T092017Z-001/SEGREGATED/single files/"
+    # path_batch = "maxQ/SEGREGATED-20200619T092017Z-001/SEGREGATED/single files/"
+    path_batch = "maxQ/New_data/SINGLE FILES-20200916T175228Z-001/SINGLE FILES/"
     if len(bn) == 1:
       letter = ''
       number = bn
@@ -178,7 +184,7 @@ def create_all_norm_files(prot_3_rep):
   q3_values = []
   for prot in prot_3_rep:
     dt.header(prot[0]+' in '+prot[1])
-    prot_batches = dt.get_batches(pd_samples, prot[0], prot[1])
+    prot_batches = dt.get_batches(pd_samples_new_codes, prot[0], prot[1])
     prot_batches = get_batches_missing_files(prot_batches)
     for bn in prot_batches :
       print('batch :', bn)
@@ -187,7 +193,7 @@ def create_all_norm_files(prot_3_rep):
       q3_values.append(normalize_q3_file(bn))
       # normalize_bait_batch(bn, prot[0])
   for cond in CONDITION:
-    batchA = dp.get_control_batches(pd_controls, 'MG1655 (TYPE A)' , cond)
+    batchA = dp.get_control_batches(pd_controls_new_codes, 'MG1655 (TYPE A)' , cond)
     batchA = get_batches_missing_files(batchA)
     for bn in batchA :
       print('batch :', bn)
@@ -195,7 +201,7 @@ def create_all_norm_files(prot_3_rep):
       normalize_q1_file(bn)
       q3_values.append(normalize_q3_file(bn))
       # normalize_bait_batch(bn, 'rplB')
-    batchC = dp.get_control_batches(pd_controls, 'MG1655 (placI)mVenus-SPA-pUC19 (TYPE C2)' , cond)
+    batchC = dp.get_control_batches(pd_controls_new_codes, 'MG1655 (placI)mVenus-SPA-pUC19 (TYPE C2)' , cond)
     batchC = get_batches_missing_files(batchC)
     for bn in batchC:
       print('batch :', bn)
@@ -214,7 +220,7 @@ def log10_calculation_new(df):
 
 def link_ctr_rep(prot, LFQ, normalize):
   '''Cou t how many proteins are present in controls, among the ones present in the 3 replicates of the tests.'''
-  prot_batches = dt.get_batches(pd_samples, prot[0], prot[1])
+  prot_batches = dt.get_batches(pd_samples_new_codes, prot[0], prot[1])
   prot_batches = get_batches_missing_files(prot_batches)
   rep = [select_intensity(load_df_maxQ(i, normalize), LFQ) for i in prot_batches]
   ctrC = [select_intensity(load_df_maxQ(i, normalize), LFQ) for i in get_batches_missing_files(controls_typeC[prot[1]])]
@@ -248,7 +254,7 @@ def link_ctr_rep(prot, LFQ, normalize):
 
 def create_table(prot, LFQ, normalize):
   '''Create a file containing intensity values for each gene present in our 3 test replicates. Absence equals to threshold.'''
-  prot_batches = dt.get_batches(pd_samples, prot[0], prot[1])
+  prot_batches = dt.get_batches(pd_samples_new_codes, prot[0], prot[1])
   prot_batches = get_batches_missing_files(prot_batches)
   rep = [select_intensity(load_df_maxQ(i, normalize), LFQ) for i in prot_batches]
   ctrC = [select_intensity(load_df_maxQ(i, normalize), LFQ) for i in get_batches_missing_files(controls_typeC[prot[1]])]
@@ -260,7 +266,8 @@ def create_table(prot, LFQ, normalize):
   if len(ctrA) == 4:
     feature_list.append('CtrA4')
   df = pd.DataFrame(0, index=indexes, columns=feature_list)
-  path_batch = "maxQ/SEGREGATED-20200619T092017Z-001/Protein_table/"
+  # path_batch = "maxQ/SEGREGATED-20200619T092017Z-001/Protein_table/"
+  path_batch = "maxQ/New_data/Protein_table/"
   for (i,repi) in enumerate(rep):
     for my_index, row in repi.iterrows():
       if my_index in indexes:
@@ -320,7 +327,8 @@ def create_table(prot, LFQ, normalize):
   return threshold
 
 def save_table_update(df, prot, LFQ, normalize):
-  path_batch = "maxQ/SEGREGATED-20200619T092017Z-001/Protein_table/"
+  # path_batch = "maxQ/SEGREGATED-20200619T092017Z-001/Protein_table/"
+  path_batch = "maxQ/New_data/Protein_table/"
   if LFQ == True:
     df.to_csv(path_batch+ prot[0]+"_"+prot[1][:6].replace('/', '_')+'_LFQ.csv')
   elif normalize == 0:
@@ -447,7 +455,7 @@ def plot_rep_proteins_per_batch(used_prot_tuples, LFQ, normalize):
   for prot in used_prot_tuples:
     name = prot[0]+'_'+prot[1][:6]
     print(name)
-    prot_batches = dt.get_batches(pd_samples, prot[0], prot[1])
+    prot_batches = dt.get_batches(pd_samples_new_codes, prot[0], prot[1])
     prot_batches = get_batches_missing_files(prot_batches)
     for bn in prot_batches:
       print(bn)
@@ -464,9 +472,9 @@ def plot_rep_proteins_per_batch(used_prot_tuples, LFQ, normalize):
       data.append([name, bn,len(df.index)]+split_mylist+[med_coeff, q3_coeff])
   CONDITION = ['LB log', 'LB O/N' ,'M9 0.2% ac O/N']
   for cond in CONDITION:
-    batchA = dp.get_control_batches(pd_controls, 'MG1655 (TYPE A)' , cond)
+    batchA = dp.get_control_batches(pd_controls_new_codes, 'MG1655 (TYPE A)' , cond)
     batchA = get_batches_missing_files(batchA)
-    batchC = dp.get_control_batches(pd_controls, 'MG1655 (placI)mVenus-SPA-pUC19 (TYPE C2)' , cond)
+    batchC = dp.get_control_batches(pd_controls_new_codes, 'MG1655 (placI)mVenus-SPA-pUC19 (TYPE C2)' , cond)
     batchC = get_batches_missing_files(batchC)
     name = 'ctrA_'+cond[:6]
     for bn in batchA:
@@ -1021,7 +1029,7 @@ def plot_log10_abundance(prot, threshold, LFQ, normalize, common_variance):
   handles.extend([cont_patch, certain_interactor_patch, interesting_interactor_patch]) # add to legend
   plt.legend(handles=handles, loc='upper right')
 
-  path_batch = "maxQ/Images/my_plots/"
+  path_batch = "maxQ/New_data/Quantitative_plots/"
   # get an appropriate plot and saved image.
   manager = plt.get_current_fig_manager() # get full screen
   manager.window.showMaximized() # get full screen
@@ -1029,8 +1037,8 @@ def plot_log10_abundance(prot, threshold, LFQ, normalize, common_variance):
   fig.subplots_adjust(left=.05, bottom=.2, right=.96, top=.93) # marges
   filename = path_batch+prot[0]+'_'+prot[1][:6].replace('/', '_')+'_'+title_text1+'_log10values.png'
   #  plt.savefig(path_batch+'test.svg') # image vectorisée
-  # plt.savefig(filename, transparent=False, dpi = 300) # image pixelisée, dpi = résolution
-  plt.savefig('test_holD.png', transparent=False, dpi = 300) # image pixelisée, dpi = résolution
+  plt.savefig(filename, transparent=False, dpi = 300) # image pixelisée, dpi = résolution
+  # plt.savefig('test_holD.png', transparent=False, dpi = 300) # image pixelisée, dpi = résolution
   # plt.show()
 
 def create_entire_final_csv(prot, LFQ, normalize):
@@ -1049,7 +1057,7 @@ def create_entire_final_csv(prot, LFQ, normalize):
   df['Gene name'] = df.index
   # keep only interesting proteins (significant)
   print(df.shape)
-  bn = dt.get_batches(pd_samples, prot[0], prot[1]) #batch names
+  bn = dt.get_batches(pd_samples_new_codes, prot[0], prot[1]) #batch names
   full_data = load_df_maxQ(bn[0], 1)
   for i, my_index in enumerate(df.index):
     df.loc[my_index, 'Protein names'] = full_data.loc[my_index, 'Protein names']
@@ -1079,12 +1087,12 @@ def create_entire_final_csv(prot, LFQ, normalize):
     title_text1 = 'q1'
   elif normalize == 4:
     title_text1 = 'q3'
-  path_batch = "maxQ/Final_results/"+prot[0]+'/'
+  path_batch = "maxQ/New_data/Final_results/"+prot[0]+'/'
   df.to_excel(path_batch+prot[0]+'_'+prot[1][:6].replace('/', '_')+'_'+title_text1+'_summary.xlsx', index = False)
 
 def create_significant_prot_final_csv(prot, LFQ, normalize):
   '''Same function than create_entire_final_csv but only for enriched proteins (absent or significantly enriched compared to one control).'''
-  path_batch = "maxQ/Final_results/"+prot[0]+'/'
+  path_batch = "maxQ/New_data/Final_results/"+prot[0]+'/'
   if LFQ == True:
     title_text1 = 'LFQ' # name of the file
   elif normalize == 0:
@@ -1113,7 +1121,7 @@ def create_significant_prot_final_csv(prot, LFQ, normalize):
   df.to_excel(path_batch+prot[0]+'_'+prot[1][:6].replace('/', '_')+'_'+title_text1+'_significant_prots.xlsx', index = True)
 
 def create_putative_proteins_analysis(used_prot_tuples, prot_name, LFQ, normalize):
-  path_batch = "maxQ/Final_results/"+prot_name+'/'
+  path_batch = "maxQ/New_data/Final_results/"+prot_name+'/'
   if LFQ == True:
     title_text1 = 'LFQ' # name of the file
   elif normalize == 0:
@@ -1184,7 +1192,6 @@ def create_putative_proteins_analysis(used_prot_tuples, prot_name, LFQ, normaliz
   #     all_df[i].to_csv(f)
 
 
-
 df = load_df_maxQ('F2', 0)
 df_int = select_intensity(df, LFQ = False)
 df_LFQ = select_intensity(df, LFQ = True)
@@ -1193,13 +1200,14 @@ df_LFQ = select_intensity(df, LFQ = True)
 # print('LFQ', df_LFQ.shape)
 # print('identif type', df[df['Identification_type_sample'].notnull()].shape)
 #print(df.iloc[11])
-#bn = dt.get_batches(pd_samples, 'DnaA', 'LB log') #batch names
+#bn = dt.get_batches(pd_samples_new_codes, 'DnaA', 'LB log') #batch names
 #replicates = [load_df_maxQ(bn[0], False), load_df_maxQ(bn[1], False), load_df_maxQ(bn[2], False)] # pandas replicates
 used_prot_tuples = dp.good_proteins()
 #for prot in [used_prot_tuples[2], used_prot_tuples[3], used_prot_tuples[5]]:
 
 prot_3_rep = prot_three_rep()
-# print(prot_two_rep())
+# create_all_norm_files(prot_3_rep)
+print('ok')
 threshold_med = 0.1
 threshold_raw = 100000
 

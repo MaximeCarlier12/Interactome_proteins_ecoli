@@ -84,13 +84,10 @@ def get_batches(pd_samples, protein, condition):
   if not condition in CONDITION : 
     print("Error condition")
     return None
-  if not protein in PROTEIN : 
+  if not protein in PROTEIN :
     print("Error protein")
     return None
   prot_row = pd_samples[pd_samples.protein== protein] # get only one row.
-  repeat_condition = 'repeat '+condition
-  if prot_row[repeat_condition].iloc[0] != 3:
-    print("Be carreful, there are not 3 replicates")
   batches = prot_row[condition].iloc[0]  # get batches of the different replicates.
   batches = batches.replace(';',',') # replace ';' by ',' because there are two separator ways in the initial file. 
   batches = batches.replace(" ", "") # remove spaces
@@ -98,3 +95,20 @@ def get_batches(pd_samples, protein, condition):
 #  header('batches')    
 #  print(batches)
   return batches
+
+def load_new_batch_codes_controls():
+  '''Same function as load_based_screen_controls but for new analysis files.'''
+  df = pd.read_excel("maxQ/New_data/ANALYSIS CODES .xlsx", sheet_name = 0, header = 5, skipfooter = 27-15)
+  typeResin = df.loc[df['strain'] == 'MG1655 (TYPE 1 CONTROL)']
+  typeResin = typeResin.replace('MG1655 (TYPE 1 CONTROL)', 'MG1655 (TYPE A)')
+  typeTag = df.loc[df['strain'] == 'MG1655 (placI)mVenus-SPA-pUC19 (TYPE 2 CONTROL)']
+  typeTag = typeTag.replace('MG1655 (placI)mVenus-SPA-pUC19 (TYPE 2 CONTROL)', 'MG1655 (placI)mVenus-SPA-pUC19 (TYPE C2)')
+  typeAbundant = df.loc[df['strain'] == 'MG1655 (TYPE 3 CONTROL)']
+  typeAbundant = typeAbundant.replace('MG1655 (TYPE 3 CONTROL)', 'MG1655')
+  return pd.concat([typeResin, typeTag, typeAbundant])
+
+def load_new_batch_codes_samples():
+  '''Same function as load_based_screen_samples but for new analysis files.'''
+  df = pd.read_excel("maxQ/New_data/ANALYSIS CODES .xlsx", sheet_name = 0, header = 18)
+  df = df.rename(columns = {'strain - tagged protein (all in MG1655 genetic background) ':'protein'})
+  return df

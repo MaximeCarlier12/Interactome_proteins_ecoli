@@ -6,7 +6,7 @@ import os
 from scipy import stats
 
 controls_typeC = {'LB log':['S1','S2','S3'], 'LB O/N':['O9', 'R4', 'R5'], 'M9 0.2% ac O/N':['R1', 'R2', 'R3']}
-controls_typeA = {'LB log':['L1', 'T7', 'T8', 'T9'], 'LB O/N':['C13', 'P5', 'U10'], 'M9 0.2% ac O/N':['A10', 'T5', 'T6']}
+controls_typeA = {'LB log':['T7', 'T8', 'T9'], 'LB O/N':['P5', 'U10', 'X17'], 'M9 0.2% ac O/N':['T5', 'T6', 'X16']}
 missing_files = ['A1', 'A2', 'M4', 'M5', 'A9', 'A10', 'I1', 'I2']
 
 prey = {'DnaA':'diaA', 'DiaA':'dnaA', 'DnaB':'dnaC', 'DnaG':'dnaB', 'NrdB':'nrdA', 'HolD':['dnaE', 'dnaN', 'dnaQ', 'dnaX', 'holA', 'holB', 'holC', 'holE'], 'SeqA':'', 'Hda':''} # no preys for hda and seqA.
@@ -23,6 +23,9 @@ os.chdir(mydir)
 pd_samples = dt.load_based_screen_samples()
 pd_controls = dt.load_based_screen_controls()
 contaminant_genes = dt.load_contaminant_list()
+
+pd_samples_new_codes = dt.load_new_batch_codes_samples()
+pd_controls_new_codes = dt.load_new_batch_codes_controls()
 
 normalization_types = {0:'Raw intensity', 1:'Median normalization', 2:'Bait protein normalization'}
 normalize_values = {0:'Not normalized', 1:'Median normalization', 2:'Bait normalization',  3:'Q1 normalization',  4:'Q3 normalization'}

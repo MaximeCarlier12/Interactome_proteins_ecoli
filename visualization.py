@@ -39,7 +39,7 @@ def venn_three_rep(used_prot_tuples, data_type):
   plt.suptitle('Venn diagrams in replicates of a protein test')
   j = 0
   for (i,prot) in enumerate(used_prot_tuples):
-    prot_batches = dt.get_batches(pd_samples, prot[0], prot[1])
+    prot_batches = dt.get_batches(pd_samples_new_codes, prot[0], prot[1])
     if data_type == 0:
       rep = [hd.load_df_unique_gene(i) for i in prot_batches]
     elif data_type == 1:
@@ -67,7 +67,7 @@ def venn_two_rep(used_prot_tuples, data_type):
   plt.suptitle('Venn diagrams with only two replicates of a protein test')
   j = 0
   for (i,prot) in enumerate(used_prot_tuples):
-    prot_batches = dt.get_batches(pd_samples, prot[0], prot[1])
+    prot_batches = dt.get_batches(pd_samples_new_codes, prot[0], prot[1])
     if data_type == 0:
       rep = [hd.load_df_unique_gene(i) for i in prot_batches]
     elif data_type == 1:
@@ -109,7 +109,7 @@ def venn_inter(used_prot_tuples, controls_dico):
   '''Venn diagram between intersect control and test.'''
   plt.suptitle('Venn diagrams of intersection of controls and replicates')
   for (i,prot) in enumerate(used_prot_tuples):
-    prot_batches = dt.get_batches(pd_samples, prot[0], prot[1])
+    prot_batches = dt.get_batches(pd_samples_new_codes, prot[0], prot[1])
     rep = [hd.load_df_unique_gene(i) for i in prot_batches]
     interR = df_intersect(rep)
     ctr = [hd.load_df_unique_gene(i) for i in controls_dico[prot[1]]]
@@ -119,8 +119,8 @@ def venn_inter(used_prot_tuples, controls_dico):
     venn_diagram([interR, interC])
   plt.show()
 
-prot_3_reps = qt.prot_three_rep()
-venn_three_rep(qt.prot_three_rep(), 1)
+# prot_3_reps = qt.prot_three_rep()
+# venn_three_rep(qt.prot_three_rep(), 1)
 # venn_two_rep(qt.prot_two_rep(), 2)
 # venn_ctr(prot_3_reps, controls_typeA, 'A', 2)
 # venn_ctr(prot_3_reps, controls_typeC, 'C', 2)
@@ -136,9 +136,9 @@ def first_version_sum_log_abundance(used_prot_tuples, data):
   batch_namesA = []
   batch_namesC = []
   for prot in used_prot_tuples:
-    prot_batches = dt.get_batches(pd_samples, prot[0], prot[1])
-    batchA = dp.get_control_batches(pd_controls, 'MG1655 (TYPE A)' , prot[1])
-    batchC = dp.get_control_batches(pd_controls, 'MG1655 (placI)mVenus-SPA-pUC19 (TYPE C2)' , prot[1])
+    prot_batches = dt.get_batches(pd_samples_new_codes, prot[0], prot[1])
+    batchA = dp.get_control_batches(pd_controls_new_codes, 'MG1655 (TYPE A)' , prot[1])
+    batchC = dp.get_control_batches(pd_controls_new_codes, 'MG1655 (placI)mVenus-SPA-pUC19 (TYPE C2)' , prot[1])
     if data == 0 :
       df = hd.load_df_table(prot, True)
       sums = df[['Rep1', 'Rep2', 'Rep3', 'CtrC1', 'CtrC2', 'CtrC3', 'CtrA1', 'CtrA2', 'CtrA3']].sum(axis=0)
@@ -217,7 +217,7 @@ def sum_log_abundance(used_prot_tuples, data):
   for prot in used_prot_tuples:
     name = prot[0]+'_'+prot[1][:6]
     name_prots.append(name)
-    prot_batches = dt.get_batches(pd_samples, prot[0], prot[1])
+    prot_batches = dt.get_batches(pd_samples_new_codes, prot[0], prot[1])
     prot_batches = qt.get_batches_missing_files(prot_batches)
     if (data == 4) and ('U5' in prot_batches): # SeqA is absent from U5 file so we can't normalize this file.
       prot_batches.remove('U5')
@@ -263,9 +263,9 @@ def sum_log_abundance(used_prot_tuples, data):
   CONDITION = ['LB log', 'LB O/N' ,'M9 0.2% ac O/N']
   for cond in CONDITION:
     name_prots.append('ctr_'+cond[:6])
-    batchA = dp.get_control_batches(pd_controls, 'MG1655 (TYPE A)' , cond)
+    batchA = dp.get_control_batches(pd_controls_new_codes, 'MG1655 (TYPE A)' , cond)
     batchA = qt.get_batches_missing_files(batchA)
-    batchC = dp.get_control_batches(pd_controls, 'MG1655 (placI)mVenus-SPA-pUC19 (TYPE C2)' , cond)
+    batchC = dp.get_control_batches(pd_controls_new_codes, 'MG1655 (placI)mVenus-SPA-pUC19 (TYPE C2)' , cond)
     batchC = qt.get_batches_missing_files(batchC)
     batch_names.append(batchC+batchA)
     sums = []
