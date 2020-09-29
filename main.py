@@ -28,7 +28,7 @@ def quant_analysis(LFQ_bool, normalization_method):
   LFQ_bool can be True (we use LFQ intensity) or False (we used raw intensity).'''
   prot_3_rep = qt.prot_three_rep() # get all proteins that contain 3 replicates that can be used with the current data. Returns tuple with bait protein and growth condition.
   # qt.create_all_norm_files(prot_3_rep) # Create all normalized files (q1, q3, median) for given proteins. It has to be done only once.
-  vz.venn_three_rep(prot_3_rep, 1) # represents venn diagram between the 3 replicates, for each protein + growth condition.
+  # vz.venn_three_rep(prot_3_rep, 1) # represents venn diagram between the 3 replicates, for each protein + growth condition.
   for prot in prot_3_rep:
     dt.header(prot[0]+ ' in '+prot[1]) # simple display
     threshold = qt.create_table(prot, LFQ = LFQ_bool, normalize = normalization_method) # creation of a table for each condition (bait+growth+media)
@@ -46,5 +46,6 @@ def quant_analysis(LFQ_bool, normalization_method):
     qt.create_putative_proteins_analysis(prot_3_rep, prot_name, LFQ_bool, normalization_method) # create 1 file per bait protein that contains the name of all enriched prey proteins. There is one sheet per growth condition (i.e 3 sheets).
 
 quant_analysis(False, 1)
+# quant_analysis(False, 4)
 
 plt.close('all')

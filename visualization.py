@@ -27,6 +27,8 @@ def venn_diagram(data, names):
     venn2(set_array, names)   # venn3 works for three sets
   elif len(data) == 4:
     venn3(set_array[:3], names[:3])   # venn3 works for three sets
+  elif len(data) == 5:
+    venn3(set_array[:3], names[:3])   # venn3 works for three sets
   else : print('error, please change data length')
 
 def venn_three_rep(used_prot_tuples, data_type):

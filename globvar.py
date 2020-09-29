@@ -20,12 +20,19 @@ PROTEINS = ['DnaA', 'DiaA', 'Hda', 'SeqA', 'HolD','DnaB', 'DnaG', 'NrdB']
 
 mydir = "/home/carlier/Documents/Stage/Interactome_proteins_ecoli/"
 os.chdir(mydir)
+# folder_to_save_all_results = 'New_data/'
+folder_to_save_all_results = 'New_data_4_replicates/'
 
 pd_samples = dt.load_based_screen_samples()
 pd_controls = dt.load_based_screen_controls()
 contaminant_genes = dt.load_contaminant_list()
 
-pd_samples_new_codes = dt.load_new_batch_codes_samples()
+# Samples new codes can be for new data (first september or with 4 replicates (25 september)).
+# pd_samples_new_codes = dt.load_new_batch_codes_samples()
+data_codes = {'protein': ['DiaA', 'SeqA', 'HolD', 'DnaG', 'Hda'], 'LB log': ['A1, E1, I4, X6', 'F4, U4, U5, X13, X14', '', '', ''], 'LB O/N': ['A2, I5, P1, X7', '', '2, F8, U11, X4', '', ''], 'M9 0.2% ac O/N': ['A3, I6, T3', '','', 'B11, F7, H3, X15', 'B12, I3, T4, X8']}
+pd_samples_new_codes = pd.DataFrame(data_codes, columns=['protein', 'LB log', 'LB O/N', 'M9 0.2% ac O/N'])
+
+print(pd_samples_new_codes)
 pd_controls_new_codes = dt.load_new_batch_codes_controls()
 
 normalization_types = {0:'Raw intensity', 1:'Median normalization', 2:'Bait protein normalization'}

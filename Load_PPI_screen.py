@@ -88,10 +88,13 @@ def get_batches(pd_samples, protein, condition):
     print("Error protein")
     return None
   prot_row = pd_samples[pd_samples.protein== protein] # get only one row.
-  batches = prot_row[condition].iloc[0]  # get batches of the different replicates.
-  batches = batches.replace(';',',') # replace ';' by ',' because there are two separator ways in the initial file. 
-  batches = batches.replace(" ", "") # remove spaces
-  batches = batches.split(',') # separate the replicates
+  if len(prot_row) == 0:
+    batches = []
+  else:
+    batches = prot_row[condition].iloc[0]  # get batches of the different replicates.
+    batches = batches.replace(';',',') # replace ';' by ',' because there are two separator ways in the initial file. 
+    batches = batches.replace(" ", "") # remove spaces
+    batches = batches.split(',') # separate the replicates
 #  header('batches')    
 #  print(batches)
   return batches
@@ -112,3 +115,4 @@ def load_new_batch_codes_samples():
   df = pd.read_excel("maxQ/New_data/ANALYSIS CODES .xlsx", sheet_name = 0, header = 18)
   df = df.rename(columns = {'strain - tagged protein (all in MG1655 genetic background) ':'protein'})
   return df
+  

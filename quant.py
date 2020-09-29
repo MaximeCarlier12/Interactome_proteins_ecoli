@@ -45,6 +45,7 @@ def prot_three_rep():
       prot_batches = dt.get_batches(pd_samples_new_codes, p, c)
       if len(get_batches_missing_files(prot_batches)) >= 3 :
         good_proteins.append((p,c))
+        print(prot_batches)
   return good_proteins
 
 def load_df_maxQ(bfNumber, norm):
@@ -257,17 +258,23 @@ def create_table(prot, LFQ, normalize):
   prot_batches = dt.get_batches(pd_samples_new_codes, prot[0], prot[1])
   prot_batches = get_batches_missing_files(prot_batches)
   rep = [select_intensity(load_df_maxQ(i, normalize), LFQ) for i in prot_batches]
+  print(len(rep))
   ctrC = [select_intensity(load_df_maxQ(i, normalize), LFQ) for i in get_batches_missing_files(controls_typeC[prot[1]])]
   ctrA = [select_intensity(load_df_maxQ(i, normalize), LFQ) for i in get_batches_missing_files(controls_typeA[prot[1]])]
   print('nb prot intersect', len(dp.intersect_index(rep)))
   indexes = list(dp.intersect_index(rep))
   print('nb genes:', len(indexes))
-  feature_list = ['Rep1', 'Rep2', 'Rep3', 'CtrC1', 'CtrC2', 'CtrC3', 'CtrA1', 'CtrA2', 'CtrA3']
+  if len(rep) == 5:
+    feature_list = ['Rep1', 'Rep2', 'Rep3','Rep4', 'Rep5', 'CtrC1', 'CtrC2', 'CtrC3', 'CtrA1', 'CtrA2', 'CtrA3']
+  elif len(rep) ==4 :
+    feature_list = ['Rep1', 'Rep2', 'Rep3','Rep4', 'CtrC1', 'CtrC2', 'CtrC3', 'CtrA1', 'CtrA2', 'CtrA3']
+  else:
+    feature_list = ['Rep1', 'Rep2', 'Rep3', 'CtrC1', 'CtrC2', 'CtrC3', 'CtrA1', 'CtrA2', 'CtrA3']
   if len(ctrA) == 4:
     feature_list.append('CtrA4')
   df = pd.DataFrame(0, index=indexes, columns=feature_list)
   # path_batch = "maxQ/SEGREGATED-20200619T092017Z-001/Protein_table/"
-  path_batch = "maxQ/New_data/Protein_table/"
+  path_batch = "maxQ/"+folder_to_save_all_results+"Protein_table/"
   for (i,repi) in enumerate(rep):
     for my_index, row in repi.iterrows():
       if my_index in indexes:
@@ -283,21 +290,21 @@ def create_table(prot, LFQ, normalize):
     for my_index, row in repi.iterrows():
       if my_index in indexes:
         if LFQ == True:
-          df.loc[my_index, feature_list[3+i]] = row.LFQ_intensity_sample
+          df.loc[my_index, feature_list[len(rep)+i]] = row.LFQ_intensity_sample
         elif normalize == 0:
-          df.loc[my_index, feature_list[3+i]] = row.Intensity_sample
+          df.loc[my_index, feature_list[len(rep)+i]] = row.Intensity_sample
         else:
-          df.loc[my_index, feature_list[3+i]] = row.Normalized_intensity
+          df.loc[my_index, feature_list[len(rep)+i]] = row.Normalized_intensity
   for (i,repi) in enumerate(ctrA):
     repi = select_intensity(repi, LFQ)
     for my_index, row in repi.iterrows():
       if my_index in indexes:
         if LFQ == True:
-          df.loc[my_index, feature_list[6+i]] = row.LFQ_intensity_sample
+          df.loc[my_index, feature_list[len(rep)+len(ctrC)+i]] = row.LFQ_intensity_sample
         elif normalize ==0:
-          df.loc[my_index, feature_list[6+i]] = row.Intensity_sample
+          df.loc[my_index, feature_list[len(rep)+len(ctrC)+i]] = row.Intensity_sample
         else:
-          df.loc[my_index, feature_list[6+i]] = row.Normalized_intensity
+          df.loc[my_index, feature_list[len(rep)+len(ctrC)+i]] = row.Normalized_intensity
   if normalize != 0:
     threshold = 0.1
   else:
@@ -305,8 +312,12 @@ def create_table(prot, LFQ, normalize):
   print(threshold)
   # threshold = df[df > .0000001].min().min() # min value of the table
   df = df.apply(lambda x: np.where(x < threshold ,threshold,x))
-  for col in df[['Rep1', 'Rep2', 'Rep3']].columns:
-    df = df.loc[df[col] != threshold] # remove each row where one replicate value equals to threshold
+  if len(rep) == 4:
+    for col in df[['Rep1', 'Rep2', 'Rep3', 'Rep4']].columns:
+      df = df.loc[df[col] != threshold] # remove each row where one replicate value equals to threshold
+  else:
+    for col in df[['Rep1', 'Rep2', 'Rep3']].columns:
+      df = df.loc[df[col] != threshold] # remove each row where one replicate value equals to threshold
   if normalize != 0:
     df = log10_calculation_new(df)
   else:
@@ -328,7 +339,7 @@ def create_table(prot, LFQ, normalize):
 
 def save_table_update(df, prot, LFQ, normalize):
   # path_batch = "maxQ/SEGREGATED-20200619T092017Z-001/Protein_table/"
-  path_batch = "maxQ/New_data/Protein_table/"
+  path_batch = "maxQ/"+folder_to_save_all_results+"Protein_table/"
   if LFQ == True:
     df.to_csv(path_batch+ prot[0]+"_"+prot[1][:6].replace('/', '_')+'_LFQ.csv')
   elif normalize == 0:
@@ -347,10 +358,20 @@ def save_table_update(df, prot, LFQ, normalize):
 def log10_calculation(prot, LFQ, normalize):
   '''Calculation of intensity logs10 and for a specific protein/condition.'''
   df = hd.load_df_table_maxQ(prot, LFQ, normalize)
-  if 'CtrC4' in df:
-    df = df[['Rep1', 'Rep2', 'Rep3', 'CtrC1', 'CtrC2', 'CtrC3', 'CtrA1','CtrA2', 'CtrA3', 'CtrA4']]
+  if 'CtrA4' in df:
+    if 'Rep5' in df:
+      df = df[['Rep1', 'Rep2', 'Rep3', 'Rep4','Rep5', 'CtrC1', 'CtrC2', 'CtrC3', 'CtrA1','CtrA2', 'CtrA3', 'CtrA4']]
+    elif 'Rep4' in df:
+      df = df[['Rep1', 'Rep2', 'Rep3', 'Rep4', 'CtrC1', 'CtrC2', 'CtrC3', 'CtrA1','CtrA2', 'CtrA3', 'CtrA4']]
+    else:
+      df = df[['Rep1', 'Rep2', 'Rep3', 'CtrC1', 'CtrC2', 'CtrC3', 'CtrA1','CtrA2', 'CtrA3', 'CtrA4']]
   else:
-    df = df[['Rep1', 'Rep2', 'Rep3', 'CtrC1', 'CtrC2', 'CtrC3', 'CtrA1','CtrA2', 'CtrA3']]
+    if 'Rep5' in df:
+      df = df[['Rep1', 'Rep2', 'Rep3', 'Rep4','Rep5', 'CtrC1', 'CtrC2', 'CtrC3', 'CtrA1','CtrA2', 'CtrA3']]
+    elif 'Rep4' in df:
+      df = df[['Rep1', 'Rep2', 'Rep3', 'Rep4', 'CtrC1', 'CtrC2', 'CtrC3', 'CtrA1','CtrA2', 'CtrA3']]
+    else:
+      df = df[['Rep1', 'Rep2', 'Rep3', 'CtrC1', 'CtrC2', 'CtrC3', 'CtrA1','CtrA2', 'CtrA3']]
   for i in df.columns:
     newname = i+'_log10'
     df[newname] = np.log10(df[i])
@@ -363,7 +384,12 @@ def get_df_to_variance(prot, data, threshold, LFQ, normalize):
   if data == 0: #test
     data_type = 'test'
     df = hd.load_df_table_maxQ(prot, LFQ, normalize)
-    df = df[['Rep1', 'Rep2', 'Rep3']]
+    if 'Rep5' in df.columns:
+      df = df[['Rep1', 'Rep2', 'Rep3', 'Rep4', 'Rep5']]
+    if 'Rep4' in df.columns:
+      df = df[['Rep1', 'Rep2', 'Rep3', 'Rep4']]
+    else:
+      df = df[['Rep1', 'Rep2', 'Rep3']]
   elif data == 1: #ctrA
     data_type = 'ctrlA'
     df = hd.load_df_table_maxQ(prot, LFQ, normalize)
@@ -522,7 +548,12 @@ def non_eq_var_ttest(prot, threshold, LFQ, normalize):
   is_fourth = 0
   if 'CtrA4' in df:
     is_fourth = 1
-  df_rep = df[['Rep1_log10', 'Rep2_log10', 'Rep3_log10']]
+  if 'Rep5' in df:
+    df_rep = df[['Rep1_log10', 'Rep2_log10', 'Rep3_log10', 'Rep4_log10', 'Rep5_log10']]
+  elif 'Rep4' in df:
+    df_rep = df[['Rep1_log10', 'Rep2_log10', 'Rep3_log10', 'Rep4_log10']]
+  else:
+    df_rep = df[['Rep1_log10', 'Rep2_log10', 'Rep3_log10']]
   if is_fourth == 0:
     df_ctrA = df[['CtrA1_log10', 'CtrA2_log10', 'CtrA3_log10']]
   else:
@@ -622,7 +653,12 @@ def get_global_variance_per_prot(prot, threshold, LFQ, normalize):
     if data == 0: #test
       data_type = 'test'
       df = hd.load_df_table_maxQ(prot, LFQ, normalize)
-      df = df[['Rep1', 'Rep2', 'Rep3']]
+      if 'Rep5' in df.columns:
+        df = df[['Rep1', 'Rep2', 'Rep3', 'Rep4', 'Rep5']]
+      elif 'Rep4' in df.columns:
+        df = df[['Rep1', 'Rep2', 'Rep3', 'Rep4']]
+      else:
+        df = df[['Rep1', 'Rep2', 'Rep3']]
     elif data == 1: #ctrA
       data_type = 'ctrlA'
       df = hd.load_df_table_maxQ(prot, LFQ, normalize)
@@ -683,7 +719,12 @@ def get_common_variances_per_media(used_prot_tuples, threshold, LFQ, normalize):
           if data == 0: #replicates
             data_type = 'replicates'
             df = hd.load_df_table_maxQ(prot, LFQ, normalize)
-            df = df[['Rep1', 'Rep2', 'Rep3']]
+            if 'Rep5' in df.columns:
+              df = df[['Rep1', 'Rep2', 'Rep3', 'Rep4', 'Rep5']]
+            elif 'Rep4' in df.columns:
+              df = df[['Rep1', 'Rep2', 'Rep3', 'Rep4']]
+            else:
+              df = df[['Rep1', 'Rep2', 'Rep3']]
           elif data == 1: #ctrA
             data_type = 'ctrlA'
             df = hd.load_df_table_maxQ(prot, LFQ, normalize)
@@ -728,7 +769,12 @@ def test_normal_equal_var(prot, threshold, LFQ, normalize, common_variance):
   print('global_var :', glob_var)
   df['glob_var'] = glob_var
   #  print(df)
-  df_rep = df[['Rep1_log10', 'Rep2_log10', 'Rep3_log10']]
+  if 'Rep5' in df.columns:
+    df_rep = df[['Rep1_log10', 'Rep2_log10', 'Rep3_log10', 'Rep4_log10', 'Rep5_log10']]
+  elif 'Rep4' in df.columns:
+    df_rep = df[['Rep1_log10', 'Rep2_log10', 'Rep3_log10', 'Rep4_log10']]
+  else:
+    df_rep = df[['Rep1_log10', 'Rep2_log10', 'Rep3_log10']]
   if 'CtrA4' in df:
     df_ctrA = df[['CtrA1_log10', 'CtrA2_log10', 'CtrA3_log10', 'CtrA4_log10']]
   else:
@@ -772,13 +818,19 @@ def test_normal_equal_var(prot, threshold, LFQ, normalize, common_variance):
 def fold_change(prot, LFQ, normalize):
   '''Calculate log2 of fold change for each protein. Creates 2 columns fo each control : FC and log2FC. Keep only log2(FC)>1.5 or >0.6 ? It means FC = 2.8 or FC>2'''
   df = hd.load_df_table_maxQ(prot, LFQ, normalize)
-  print('mean', df[['Rep1', 'Rep2', 'Rep3']].mean(axis = 1))
-  if 'CtrA4' in df.columns:
-    print('diff_mean', df[['Rep1', 'Rep2', 'Rep3']].mean(axis = 1)/df[['CtrA1', 'CtrA2', 'CtrA3', 'CtrA4']].mean(axis = 1))
-    df['FC_A'] = df[['Rep1', 'Rep2', 'Rep3']].mean(axis = 1)/df[['CtrA1', 'CtrA2', 'CtrA3', 'CtrA4']].mean(axis = 1)
+  if 'Rep5' in df.columns:
+    df_rep = df[['Rep1', 'Rep2', 'Rep3', 'Rep4', 'Rep5']]
+  elif 'Rep4' in df.columns:
+    df_rep = df[['Rep1', 'Rep2', 'Rep3', 'Rep4']]
   else:
-    df['FC_A'] = df[['Rep1', 'Rep2', 'Rep3']].mean(axis = 1)/df[['CtrA1', 'CtrA2', 'CtrA3']].mean(axis =1)
-  df['FC_C'] = df[['Rep1', 'Rep2', 'Rep3']].mean(axis = 1)/df[['CtrC1', 'CtrC2', 'CtrC3']].mean(axis =1)
+    df_rep = df[['Rep1', 'Rep2', 'Rep3']]
+  print('mean', df_rep.mean(axis = 1))
+  if 'CtrA4' in df.columns:
+    print('diff_mean', df_rep.mean(axis = 1)/df[['CtrA1', 'CtrA2', 'CtrA3', 'CtrA4']].mean(axis = 1))
+    df['FC_A'] = df_rep.mean(axis = 1)/df[['CtrA1', 'CtrA2', 'CtrA3', 'CtrA4']].mean(axis = 1)
+  else:
+    df['FC_A'] = df_rep.mean(axis = 1)/df[['CtrA1', 'CtrA2', 'CtrA3']].mean(axis =1)
+  df['FC_C'] = df_rep.mean(axis = 1)/df[['CtrC1', 'CtrC2', 'CtrC3']].mean(axis =1)
   df['log2FC_A'] = np.log2(df['FC_A'])
   df['log2FC_C'] = np.log2(df['FC_C'])
   save_table_update(df, prot, LFQ, normalize)
@@ -878,8 +930,15 @@ def plot_log10_abundance(prot, threshold, LFQ, normalize, common_variance):
   #  var_test = hd.load_df_equal_test()
   df = hd.load_df_table_maxQ(prot, LFQ, normalize)
   indexes = df.index
-  df['mean_intensity'] = df[['Rep1_log10', 'Rep2_log10', 'Rep3_log10']].mean(axis=1)
-  minval = df[['Rep1_log10', 'Rep2_log10', 'Rep3_log10']].min().min() # min value of the replicates. Reduces variability due to the absence of a value. 
+  if 'Rep5' in df.columns:
+    df_rep = df[['Rep1_log10', 'Rep2_log10', 'Rep3_log10', 'Rep4_log10', 'Rep5_log10']]
+  elif 'Rep4' in df.columns:
+    df_rep = df[['Rep1_log10', 'Rep2_log10', 'Rep3_log10', 'Rep4_log10']]
+  else:
+    df_rep = df[['Rep1_log10', 'Rep2_log10', 'Rep3_log10']]
+
+  df['mean_intensity'] = df_rep.mean(axis=1)
+  minval = df_rep.min().min() # min value of the replicates. Reduces variability due to the absence of a value. 
   print('log10_minval_replicates', minval)
   minval = np.log10(threshold)
   print('log10_threshold', minval)
@@ -903,6 +962,10 @@ def plot_log10_abundance(prot, threshold, LFQ, normalize, common_variance):
   plt.title(prot[0]+' in '+prot[1])
   for i,rep in enumerate(['Rep1_log10', 'Rep2_log10', 'Rep3_log10']):
     ax.scatter(df.index, df[rep], label="Test" if i == 0 else "", color='royalblue', alpha=0.5, marker = 'o', s=40)
+  if 'Rep4' in df:
+    ax.scatter(df.index, np.log10(df.Rep4), color='royalblue', alpha=0.5, marker = 'o', s=40)
+  if 'Rep5' in df:
+    ax.scatter(df.index, np.log10(df.Rep5), color='royalblue', alpha=0.5, marker = 'o', s=40)
   for i,rep in enumerate(['CtrA1_log10', 'CtrA2_log10', 'CtrA3_log10']):
     ax.scatter(df.index, df[rep], label="CtrA (without SPA tag)" if i == 0 else "", color='red', alpha=0.6, marker = 0, s=40)
   if 'CtrA4' in df :
@@ -975,7 +1038,6 @@ def plot_log10_abundance(prot, threshold, LFQ, normalize, common_variance):
 
   # Confidence interval
 
-  df_rep = np.log10(df[['Rep1', 'Rep2', 'Rep3']])
   # mean_conf_int = st.mean_confidence_interval(df_rep, 0.95, get_global_variance_per_prot(prot, threshold, LFQ, normalize))
   mean_conf_int = st.mean_confidence_interval(df_rep, 0.95, common_variance[prot[1]])
 
@@ -1029,7 +1091,7 @@ def plot_log10_abundance(prot, threshold, LFQ, normalize, common_variance):
   handles.extend([cont_patch, certain_interactor_patch, interesting_interactor_patch]) # add to legend
   plt.legend(handles=handles, loc='upper right')
 
-  path_batch = "maxQ/New_data/Figures/Quantitative_plots/"
+  path_batch = "maxQ/"+folder_to_save_all_results+"Images/Quantitative_plots/"
   # get an appropriate plot and saved image.
   manager = plt.get_current_fig_manager() # get full screen
   manager.window.showMaximized() # get full screen
@@ -1045,8 +1107,14 @@ def plot_log10_abundance(prot, threshold, LFQ, normalize, common_variance):
 def create_entire_final_csv(prot, LFQ, normalize):
   '''Create final files that will be sent to the collaborators. It contains important information only on interesting proteins such as pvalues, FC, putative type, mean between replicates.'''
   df = hd.load_df_table_maxQ(prot, LFQ, normalize)
-  df['Mean replicates log10'] = df[['Rep1_log10', 'Rep2_log10', 'Rep3_log10']].mean(axis = 1)
-  df['Individual variance replicates log10'] = df[['Rep1_log10', 'Rep2_log10', 'Rep3_log10']].var(axis = 1) # default : ddof = 1
+  if 'Rep5' in df.columns:
+    df_rep_log = df[['Rep1_log10', 'Rep2_log10', 'Rep3_log10', 'Rep4_log10', 'Rep5_log10']]
+  elif 'Rep4' in df.columns:
+    df_rep_log = df[['Rep1_log10', 'Rep2_log10', 'Rep3_log10', 'Rep4_log10']]
+  else:
+    df_rep_log = df[['Rep1_log10', 'Rep2_log10', 'Rep3_log10']]
+  df['Mean replicates log10'] = df_rep_log.mean(axis = 1)
+  df['Individual variance replicates log10'] = df_rep_log.var(axis = 1) # default : ddof = 1
   if 'CtrA4' in df.columns:
     df['Mean ctrA log10'] = df[['CtrA1_log10', 'CtrA2_log10', 'CtrA3_log10', 'CtrA4_log10']].mean(axis = 1)
     df['Individual variance ctrA log10'] = df[['CtrA1_log10', 'CtrA2_log10', 'CtrA3_log10', 'CtrA4_log10']].var(axis = 1)
@@ -1088,12 +1156,12 @@ def create_entire_final_csv(prot, LFQ, normalize):
     title_text1 = 'q1'
   elif normalize == 4:
     title_text1 = 'q3'
-  path_batch = "maxQ/New_data/Final_results/"+prot[0]+'/'
+  path_batch = "maxQ/"+folder_to_save_all_results+"Final_results/"+prot[0]+'/'
   df.to_excel(path_batch+prot[0]+'_'+prot[1][:6].replace('/', '_')+'_'+title_text1+'_summary.xlsx', index = False)
 
 def create_significant_prot_final_csv(prot, LFQ, normalize):
   '''Same function than create_entire_final_csv but only for enriched proteins (absent or significantly enriched compared to one control).'''
-  path_batch = "maxQ/New_data/Final_results/"+prot[0]+'/'
+  path_batch = "maxQ/"+folder_to_save_all_results+"Final_results/"+prot[0]+'/'
   if LFQ == True:
     title_text1 = 'LFQ' # name of the file
   elif normalize == 0:
@@ -1122,7 +1190,7 @@ def create_significant_prot_final_csv(prot, LFQ, normalize):
   df.to_excel(path_batch+prot[0]+'_'+prot[1][:6].replace('/', '_')+'_'+title_text1+'_significant_prots.xlsx', index = True)
 
 def create_putative_proteins_analysis(used_prot_tuples, prot_name, LFQ, normalize):
-  path_batch = "maxQ/New_data/Final_results/"+prot_name+'/'
+  path_batch = "maxQ/"+folder_to_save_all_results+"Final_results/"+prot_name+'/'
   if LFQ == True:
     title_text1 = 'LFQ' # name of the file
   elif normalize == 0:
